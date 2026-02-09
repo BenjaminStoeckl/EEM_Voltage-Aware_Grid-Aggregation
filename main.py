@@ -22,7 +22,7 @@ def main():
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
-    n_full = pypsa.Network(config['network_data_path'])
+    n_full = pypsa.Network(config['pypsa_eur_test_case_path'])
 
     # 2. Plot the initial grid setup for verification
     plotting.plot_network(n_full, config['results_path'])
