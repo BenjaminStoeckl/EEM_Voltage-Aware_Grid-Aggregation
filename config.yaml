@@ -1,0 +1,21 @@
+pypsa_eur_test_case_path: "./data/pypsa-eur-sec-30-2013.nc"
+results_path: "./results/"
+
+temporal_clustering:
+  n_clusters: 10
+
+# Options for the native PyPSA aggregation strategy.
+# We can specify clustering strategies for buses and lines.
+# Using k-means on coordinates for buses is a geographical approach.
+aggregation_options:
+  bus_strategies:
+    "1": "kmeans"
+  line_strategies:
+    "1": "length_capacity_weighted_average"
+  generator_strategies:
+    "1": "sum"
+  storage_unit_strategies:
+    "1": "sum"
+
+# Placeholder for voltage-aware aggregation options
+voltage_aware_options: {}

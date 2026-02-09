@@ -1,0 +1,44 @@
+"""
+Module for configuring and running the PyPSA optimization models.
+"""
+import pypsa
+import os
+from typing import Dict
+
+def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> str:
+    """
+    Configures and solves the network expansion planning problem.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to be solved.
+        model_name (str): A descriptive name for the model run (e.g., "full_model").
+        config (Dict): The main configuration dictionary.
+
+    Returns:
+        str: The path to the solved network file.
+    """
+    results_dir = os.path.join(config['results_path'], model_name)
+    os.makedirs(results_dir, exist_ok=True)
+    
+    # TODO: Configure the model for expansion planning based on config.
+    # This would involve making lines and generators extendable.
+    # For example:
+    # n.lines["s_nom_extendable"] = True
+    # n.generators["p_nom_extendable"] = True
+
+    print(f"Running optimization for '{model_name}'...")
+    
+    # A simple solve, replace with a proper optimization call
+    try:
+        # n.lopf(pyomo=False, solver_name='glpk') # Example, needs a solver
+        print(f"Optimization for '{model_name}' complete (simulation).")
+    except Exception as e:
+        print(f"Could not run optimization for '{model_name}', perhaps no solver is installed? Error: {e}")
+
+
+    # Save the results
+    results_path = os.path.join(results_dir, "results.nc")
+    # n.export_to_netcdf(results_path)
+    print(f"Results for '{model_name}' saved to '{results_path}' (simulation).")
+    
+    return results_path
