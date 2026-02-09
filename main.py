@@ -6,6 +6,8 @@ import yaml
 import pypsa
 import logging
 
+import os
+
 from src import data_handling, temporal_clustering, model_runner, postprocessing, plotting
 from src.aggregation import pypsa_native, voltage_aware
 
@@ -22,10 +24,13 @@ def main():
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
-    n_full = pypsa.Network(config['pypsa_eur_test_case_path'])
+    n_full = pypsa.Network(os.path.join(config['pypsa_eur_test_case_path'], 'networks', config['test_case']))
 
     # 2. Plot the initial grid setup for verification
+    # 2.a Plot as picture
     plotting.plot_network(n_full, config['results_path'])
+    # 2.b Plot as interactive map (optional, requires plotly)
+    plotting.plot_network_interactive(n_full, config['results_path'])
 
 
     # 3. Cluster the test case temporally

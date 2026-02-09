@@ -1,5 +1,7 @@
-pypsa_eur_test_case_path: "./data/pypsa-eur-sec-30-2013.nc"
-results_path: "./results/"
+pypsa_eur_test_case_path: "C:/BeSt/VA-GA/PyPSA-Eur_v0.7.0"
+results_path: "C:/BeSt/VA-GA/results"
+
+test_case: "elec_s_1024.nc"
 
 temporal_clustering:
   n_clusters: 10
