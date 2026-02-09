@@ -1,8 +1,12 @@
 """
 Module for temporal (time-series) clustering of the network.
 """
-import pypsa
 from typing import Dict
+
+import pypsa
+
+from pypsa.clustering.temporal import downsample
+
 
 def cluster_temporally(n: pypsa.Network, temporal_config: Dict) -> pypsa.Network:
     """
@@ -23,8 +27,5 @@ def cluster_temporally(n: pypsa.Network, temporal_config: Dict) -> pypsa.Network
     # The actual clustering logic will be implemented here.
     # For now, we'll just return the network as is.
     # A typical implementation would use tsam or pypsa.clustering.
-    
-    # Placeholder: Just return the network without modification for now.
-    print("Temporal clustering not yet implemented. Returning original network.")
-    return n
 
+    return downsample(n, len(n.snapshots)/temporal_config['n_clusters'])

@@ -26,6 +26,8 @@ def main():
     # 1. Load a plottable PyPSA example network
     n_full = pypsa.Network(os.path.join(config['pypsa_eur_test_case_path'], 'networks', config['test_case']))
 
+    print(dir(n_full.cluster))
+
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
     plotting.plot_network(n_full, config['results_path'])
@@ -36,6 +38,8 @@ def main():
     # 3. Cluster the test case temporally
     logging.info(f"Clustering network temporally to {config['temporal_clustering']['n_clusters']} periods.")
     n_clustered = temporal_clustering.cluster_temporally(n_full, config['temporal_clustering'])
+
+    print(n_clustered)
 
     # # 3. Configure and run the full, but temporally clustered, model for expansion planning
     # logging.info("Running expansion planning for the full (unaggregated) model.")
