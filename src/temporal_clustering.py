@@ -28,4 +28,6 @@ def cluster_temporally(n: pypsa.Network, temporal_config: Dict) -> pypsa.Network
     # For now, we'll just return the network as is.
     # A typical implementation would use tsam or pypsa.clustering.
 
-    return downsample(n, len(n.snapshots)/temporal_config['n_clusters'])
+    clustered = downsample(n, int(len(n.snapshots)/temporal_config['n_clusters']))
+
+    return clustered.n
