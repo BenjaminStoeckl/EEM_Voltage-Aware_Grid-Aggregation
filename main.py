@@ -14,6 +14,7 @@ from src.aggregation import pypsa_native, voltage_aware
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 def main():
     """
     Orchestrates the entire workflow for comparing grid aggregation methods.
@@ -24,9 +25,7 @@ def main():
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
-    n_full = pypsa.Network(os.path.join(config['pypsa_eur_test_case_path'], 'networks', config['test_case']))
-
-    print(dir(n_full.cluster))
+    n_full = data_handling.load_network(os.path.join(config['pypsa_eur_test_case_path'], 'networks', config['test_case']))
 
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
@@ -34,18 +33,18 @@ def main():
     # 2.b Plot as interactive map (optional, requires plotly)
     plotting.plot_network_interactive(n_full, config['results_path'])
 
-
     # 3. Cluster the test case temporally
-    logging.info(f"Clustering network temporally to {config['temporal_clustering']['n_clusters']} periods.")
     n_clustered = temporal_clustering.cluster_temporally(n_full, config['temporal_clustering'])
 
-    print(n_clustered)
+    # 3. Configure and run the full, but temporally clustered, model for expansion planning
+    logging.info("Running expansion planning for the full (unaggregated) model.")
+    n_clustered = model_runner.run_expansion_planning(
+        n_clustered, "full_model", config
+    )
 
-    # # 3. Configure and run the full, but temporally clustered, model for expansion planning
-    # logging.info("Running expansion planning for the full (unaggregated) model.")
-    # full_model_results_path = model_runner.run_expansion_planning(
-    #     n_clustered.copy(), "full_model", config
-    # )
+    plotting.plot_network_with_results_interactive(n_clustered, config['results_path'])
+
+
     #
     # # 4. Aggregate the grid with built-in PyPSA methods
     # logging.info("Aggregating the grid using native PyPSA methods (geographical).")
