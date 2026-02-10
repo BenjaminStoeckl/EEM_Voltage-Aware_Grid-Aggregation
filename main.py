@@ -33,16 +33,22 @@ def main():
     # 2.b Plot as interactive map (optional, requires plotly)
     plotting.plot_network_interactive(n_full, config['results_path'])
 
+    # Aggregate stub lines to simplify the network for testing
+    n_agg_stub = pypsa_native.aggregate_stubs(n_full)
+    n_agg_stub.name = 'Eur_full_model_agg_stub'
+    plotting.plot_network(n_agg_stub, config['results_path'])
+    plotting.plot_network_interactive(n_agg_stub, config['results_path'])
+
     # 3. Cluster the test case temporally
     n_clustered = temporal_clustering.cluster_temporally(n_full, config['temporal_clustering'])
 
     # 3. Configure and run the full, but temporally clustered, model for expansion planning
     logging.info("Running expansion planning for the full (unaggregated) model.")
-    n_clustered = model_runner.run_expansion_planning(
-        n_clustered, "full_model", config
-    )
-
-    plotting.plot_network_with_results_interactive(n_clustered, config['results_path'])
+    # n_clustered = model_runner.run_expansion_planning(
+    #     n_clustered, "full_model", config
+    # )
+    #
+    # plotting.plot_network_with_results_interactive(n_clustered, config['results_path'])
 
 
     #
