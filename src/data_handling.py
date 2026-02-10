@@ -4,6 +4,9 @@ Module for loading and preparing the initial PyPSA network data.
 import pypsa
 import os
 
+from pypsa.clustering.spatial import DEFAULT_BUS_STRATEGIES
+
+
 def load_network(path_to_network: str) -> pypsa.Network:
     """
     Loads a PyPSA network from a given file path.
@@ -27,5 +30,9 @@ def load_network(path_to_network: str) -> pypsa.Network:
 
     n_full.sanitize()
 
+    # reduce_stub_busmap = pypsa.clustering.spatial.busmap_by_stubs(n_full, ['carrier'])
+    #
+    # clustering = pypsa.clustering.spatial.get_clustering_from_busmap(n_full, reduce_stub_busmap)
 
-    return pypsa.Network(path_to_network)
+
+    return n_full
