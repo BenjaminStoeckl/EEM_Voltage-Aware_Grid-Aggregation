@@ -33,3 +33,33 @@ def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
     n_agg.set_snapshots(n.snapshots) # Keep the same snapshots
     
     return n_agg
+
+
+def aggregate_stubs(n: pypsa.Network) -> pypsa.Network:
+
+
+    reduce_stub_bus_strategie = {
+        'symbol': 'first',
+        'tags': 'first',
+        'country': 'first',
+        'substation_lv': 'first',
+        'substation_off': 'first',
+        'control': 'first',
+    }
+
+    reduce_stub_lines_strategie = {
+        'underground': 'first',
+        'under_construction': 'first',
+        'tags': 'first',
+        'geometry': 'first',
+    }
+
+    reduce_stub_busmap = pypsa.clustering.spatial.busmap_by_stubs(n, ['carrier', 'v_nom', 'under_construction'])
+
+    clustering = pypsa.clustering.spatial.get_clustering_from_busmap(n, reduce_stub_busmap, bus_strategies=reduce_stub_bus_strategie,
+                                                                     line_strategies=reduce_stub_lines_strategie)
+
+    clustered_network = clustering.n
+    clustered_network.transformers = n.transformers  # add transformers because they are not handled by the clustering
+
+    return clustering.n
