@@ -1,6 +1,6 @@
-pypsa_eur_test_case_path: "C:/BeSt/VA-GA/PyPSA-Eur_v0.7.0"
-results_path: "C:/BeSt/VA-GA/results"
-path_for_temporary_files: "C:/BeSt/VA-GA/temp"
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+results_path: "C:\\BeSt\\VA-GA\\results"
+path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
 test_case: "elec.nc"
 
