@@ -5,7 +5,7 @@ import pypsa
 import os
 from typing import Dict
 
-def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> str:
+def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> pypsa.Network:
     """
     Configures and solves the network expansion planning problem.
 
@@ -30,7 +30,9 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> s
     
     # A simple solve, replace with a proper optimization call
     try:
-        # n.lopf(pyomo=False, solver_name='glpk') # Example, needs a solver
+        path_temp_files = os.path.join(config['path_for_temporary_files'], 'pypsa_model.lp')
+        n.optimize(solver_name="gurobi", problem_fn=path_temp_files, solver_options=config["solver_options"],
+                   compute_infeasibilities=True)
         print(f"Optimization for '{model_name}' complete (simulation).")
     except Exception as e:
         print(f"Could not run optimization for '{model_name}', perhaps no solver is installed? Error: {e}")
@@ -39,6 +41,6 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> s
     # Save the results
     results_path = os.path.join(results_dir, "results.nc")
     # n.export_to_netcdf(results_path)
-    print(f"Results for '{model_name}' saved to '{results_path}' (simulation).")
+    # print(f"Results for '{model_name}' saved to '{results_path}' (simulation).")
     
-    return results_path
+    return n
