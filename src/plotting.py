@@ -57,13 +57,13 @@ def plot_network(n: pypsa.Network, output_file: str):
         logging.info(f"Generating static plot and saving to {output_file}...")
         
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
 
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 
         n.plot(ax=ax, bus_color='red', line_color='black', line_width=2)
-        fig.savefig(os.path.join(output_file, 'map.svg'))
+        fig.savefig(os.path.join(output_file, n.name, 'map.svg'))
 
         
     except Exception as e:
@@ -84,8 +84,15 @@ def plot_network_interactive(n: pypsa.Network, output_file: str):
     """
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
-        map = n.explore(line_color=get_line_colors_by_voltage(n))
-        map.to_html(os.path.join(output_file, 'interactive_map.html'))
+
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
+
+        map = n.explore(line_color=get_line_colors_by_voltage(n),
+                        transformer_width=3,
+                        tooltip=True,
+                        jitter=0.05,)
+        map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
 
