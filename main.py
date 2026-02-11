@@ -40,15 +40,16 @@ def main():
     plotting.plot_network_interactive(n_agg_stub, config['results_path'])
 
     # 3. Cluster the test case temporally
-    n_clustered = temporal_clustering.cluster_temporally(n_full, config['temporal_clustering'])
+    n_temporal_clustered = temporal_clustering.cluster_temporally(n_agg_stub, config['temporal_clustering'])
+    n_temporal_clustered.name = 'Eur_stub_agg_model_temporal_clustered'
 
     # 3. Configure and run the full, but temporally clustered, model for expansion planning
     logging.info("Running expansion planning for the full (unaggregated) model.")
-    # n_clustered = model_runner.run_expansion_planning(
-    #     n_clustered, "full_model", config
-    # )
-    #
-    # plotting.plot_network_with_results_interactive(n_clustered, config['results_path'])
+    n_temporal_clustered = model_runner.run_expansion_planning(
+        n_temporal_clustered, "full_model", config
+    )
+
+    plotting.plot_network_with_results_interactive(n_temporal_clustered, config['results_path'])
 
 
     #

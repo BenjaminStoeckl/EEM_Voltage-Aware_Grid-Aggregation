@@ -111,27 +111,30 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
 
-        eb = (
-            n.statistics.energy_balance(
-                groupby=["bus", "carrier"],
-                components=["Generator", "Load", "StorageUnit"],
-            )
-            .groupby(["bus", "carrier"])
-            .sum()
-        )
+        # eb = (
+        #     n.statistics.energy_balance(
+        #         groupby=["bus", "carrier"],
+        #         components=["Generator", "Load", "StorageUnit"],
+        #     )
+        #     .groupby(["bus", "carrier"])
+        #     .sum()
+        # )
+
+        # line_flow = (n.lines_t.p0.sum(axis=0)/n.lines_t.p0.sum(axis=0).sum())*10
+        # link_flow = (n.links_t.p0.sum(axis=0)/n.links_t.p0.sum(axis=0).sum())*10
 
         line_flow = n.lines_t.p0.sum(axis=0)
         link_flow = n.links_t.p0.sum(axis=0)
 
 
         map = n.explore(
-            bus_size=eb,
+            # bus_size=eb,
             bus_split_circle=True,
-            line_width=line_flow,
-            link_width=link_flow,
+            # line_width=line_flow,
+            # link_width=link_flow,
             line_flow=line_flow,
             link_flow=link_flow,
         )
-        map.to_html(os.path.join(output_file, 'interactive_map.html'))
+        map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
