@@ -4,6 +4,9 @@ Module for grid aggregation using native PyPSA clustering methods.
 import pypsa
 from typing import Dict
 
+from pypsa.clustering.spatial import DEFAULT_ONE_PORT_STRATEGIES
+
+
 def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
     """
     Aggregates the grid using PyPSA's built-in network clustering.
@@ -56,8 +59,13 @@ def aggregate_stubs(n: pypsa.Network) -> pypsa.Network:
 
     reduce_stub_busmap = pypsa.clustering.spatial.busmap_by_stubs(n, ['carrier', 'v_nom', 'under_construction'])
 
-    clustering = pypsa.clustering.spatial.get_clustering_from_busmap(n, reduce_stub_busmap, bus_strategies=reduce_stub_bus_strategie,
-                                                                     line_strategies=reduce_stub_lines_strategie)
+    clustering = pypsa.clustering.spatial.get_clustering_from_busmap(n,
+                                                                     reduce_stub_busmap,
+                                                                     bus_strategies=reduce_stub_bus_strategie,
+                                                                     line_strategies=reduce_stub_lines_strategie,
+                                                                     one_port_strategies=DEFAULT_ONE_PORT_STRATEGIES,
+                                                                     aggregate_one_ports=["Generator", "Load", "StorageUnit"]
+                                                                     )
 
     clustered_network = clustering.n
     clustered_network.transformers = n.transformers  # add transformers because they are not handled by the clustering
