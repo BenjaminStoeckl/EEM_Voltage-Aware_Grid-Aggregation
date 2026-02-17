@@ -2,11 +2,6 @@
 Module for loading and preparing the initial PyPSA network data.
 """
 import pypsa
-import os
-
-from dask.rewrite import strategies
-from pypsa.clustering.spatial import DEFAULT_BUS_STRATEGIES
-from toolz.curried import reduce
 
 
 def load_network(path_to_network: str) -> pypsa.Network:
@@ -27,10 +22,10 @@ def load_network(path_to_network: str) -> pypsa.Network:
 
     # Add a slack generator to each bus to ensure feasibility
     n_full.add("Generator", n_full.buses.index + " slack",
-          bus=n_full.buses.index,
-          p_nom=10000,
-          marginal_cost=10000,
-          carrier="slack")
+               bus=n_full.buses.index,
+               p_nom=10000,
+               marginal_cost=10000,
+               carrier="slack")
 
     # Sanitize the network (add slack bus, define carriers, etc.)
     n_full.sanitize()
