@@ -10,7 +10,7 @@ solver_options: {
 }
 
 temporal_clustering:
-  n_clusters: 10
+  n_timestep_clusters: 1
 
 # Options for the native PyPSA aggregation strategy.
 # We can specify clustering strategies for buses and lines.
