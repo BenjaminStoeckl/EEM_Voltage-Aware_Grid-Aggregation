@@ -1,1 +1,4 @@
-# This file makes the 'aggregation' directory a Python sub-package.
+"""
+Initializes the 'aggregation' sub-package, containing modules for
+various grid aggregation techniques.
+"""

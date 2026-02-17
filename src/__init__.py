@@ -1,1 +1,3 @@
-# This file makes the 'src' directory a Python package.
+"""
+Initializes the 'src' package for the Voltage-Aware Grid Aggregation project.
+"""
