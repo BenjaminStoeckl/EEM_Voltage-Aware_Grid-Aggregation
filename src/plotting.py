@@ -1,3 +1,10 @@
+"""
+Module for generating various plots and visualizations of PyPSA networks.
+
+This module provides functions for creating both static and interactive
+representations of electrical grids, including geographical plots,
+and visualizations incorporating simulation results.
+"""
 
 import pypsa
 import os
@@ -44,6 +51,18 @@ def get_line_colors_by_voltage(n: pypsa.Network) -> pd.Series:
 
 def plot_network(n: pypsa.Network, output_file: str):
     """
+    Generates a static geographical plot of the PyPSA network and saves it as an SVG file.
+
+    The plot visualizes buses as red points and lines as black lines on a
+    PlateCarree projection. The output file path is constructed based on
+    the provided `output_file` and the network's name.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to plot.
+        output_file (str): The base directory path where the plot HTML file
+                           will be saved within a subdirectory named after the network.
+    """
+    """
     Generates an interactive plot of the network using geopandas and plotly,
     and saves it to an HTML file.
 
@@ -73,6 +92,20 @@ def plot_network(n: pypsa.Network, output_file: str):
 
 def plot_network_interactive(n: pypsa.Network, output_file: str):
     """
+    Generates an interactive geographical plot of the PyPSA network using `n.explore()`
+    and saves it to an HTML file.
+
+    This function visualizes the network with lines colored by voltage level
+    (using `get_line_colors_by_voltage`), includes transformer width, and tooltips
+    for interactive inspection. The plot is saved within a subdirectory named
+    after the network inside the specified `output_file` path.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to plot.
+        output_file (str): The base directory path where the plot HTML file
+                           will be saved within a subdirectory named after the network.
+    """
+    """
     Generates an interactive plot of the network using geopandas and plotly,
     and saves it to an HTML file.
 
@@ -98,6 +131,19 @@ def plot_network_interactive(n: pypsa.Network, output_file: str):
 
 
 def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
+    """
+    Generates an interactive geographical plot of the PyPSA network, incorporating
+    simulation results like line and link flows, and saves it to an HTML file.
+
+    This function leverages `n.explore()` to visualize the network, with options
+    to represent line and link flows. The plot is saved within a subdirectory
+    named after the network inside the specified `output_file` path.
+
+    Args:
+        n (pypsa.Network): The PyPSA network with simulation results to plot.
+        output_file (str): The base directory path where the plot HTML file
+                           will be saved within a subdirectory named after the network.
+    """
     """
     Generates an interactive plot of the network using geopandas and plotly,
     and saves it to an HTML file.

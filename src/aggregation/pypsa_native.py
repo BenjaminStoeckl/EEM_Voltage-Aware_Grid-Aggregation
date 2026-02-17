@@ -39,6 +39,21 @@ def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
 
 
 def aggregate_stubs(n: pypsa.Network) -> pypsa.Network:
+    """
+    Aggregates 'stub' buses and their associated components in the network.
+
+    This function uses PyPSA's spatial clustering to reduce buses that are
+    considered 'stubs' (e.g., isolated buses or those with limited connections)
+    by mapping them to existing buses based on specified attributes.
+    It applies predefined strategies for aggregating bus and line attributes
+    and re-attaches transformers to the resulting clustered network.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to be processed for stub aggregation.
+
+    Returns:
+        pypsa.Network: The network with stub buses aggregated.
+    """
 
 
     reduce_stub_bus_strategie = {
