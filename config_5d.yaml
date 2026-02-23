@@ -1,0 +1,31 @@
+# Configuration file for a testcase ment to be run on a powerfull pc, not the personal laptops!
+
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+results_path: "C:\\BeSt\\VA-GA\\results"
+path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
+
+test_case: "elec.nc"
+
+solver_options: {
+                  LogToConsole: 0,
+                  ResultFile: 'infeasibility.ilp',
+}
+
+temporal_clustering:
+  n_timestep_clusters: 5 # days with 24 hours
+
+# Options for the native PyPSA aggregation strategy.
+# We can specify clustering strategies for buses and lines.
+# Using k-means on coordinates for buses is a geographical approach.
+aggregation_options:
+  bus_strategies:
+    "1": "kmeans"
+  line_strategies:
+    "1": "length_capacity_weighted_average"
+  generator_strategies:
+    "1": "sum"
+  storage_unit_strategies:
+    "1": "sum"
+
+# Placeholder for voltage-aware aggregation options
+voltage_aware_options: {}
