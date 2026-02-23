@@ -2,14 +2,13 @@
 Main script to run the grid aggregation testing framework.
 """
 
-import yaml
-import pypsa
 import logging
-
 import os
 
-from src import data_handling, temporal_clustering, model_runner, postprocessing, plotting
-from src.aggregation import pypsa_native, voltage_aware
+import yaml
+
+from src import data_handling, temporal_clustering, model_runner, plotting
+from src.aggregation import pypsa_native
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -20,8 +19,8 @@ def main():
     Orchestrates the entire workflow for comparing grid aggregation methods.
     """
     # 0. Load configuration
-    logging.info("Loading configuration from config.yaml")
-    with open("config.yaml") as f:
+    logging.info("Loading configuration from testconfig_1d.yaml")
+    with open("testconfig_1d.yaml") as f:
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
@@ -29,18 +28,21 @@ def main():
 
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
-    plotting.plot_network(n_full, config['results_path'])
-    # 2.b Plot as interactive map (optional, requires plotly)
-    plotting.plot_network_interactive(n_full, config['results_path'])
+    # plotting.plot_network(n_full, config['results_path'])
+    # # 2.b Plot as interactive map (optional, requires plotly)
+    # plotting.plot_network_interactive(n_full, config['results_path'])
 
     # Aggregate stub lines to simplify the network for testing
     n_agg_stub = pypsa_native.aggregate_stubs(n_full)
     n_agg_stub.name = 'Eur_full_model_agg_stub'
-    plotting.plot_network(n_agg_stub, config['results_path'])
-    plotting.plot_network_interactive(n_agg_stub, config['results_path'])
+
+    print(len(n_full.generators), len(n_agg_stub.generators))
+
+    # plotting.plot_network(n_agg_stub, config['results_path'])
+    # plotting.plot_network_interactive(n_agg_stub, config['results_path'])
 
     # 3. Cluster the test case temporally
-    n_temporal_clustered = temporal_clustering.cluster_temporally(n_agg_stub, config['temporal_clustering'])
+    n_temporal_clustered = temporal_clustering.aggregate_temporally_by_clustering(n_agg_stub, config['temporal_clustering'])
     n_temporal_clustered.name = 'Eur_stub_agg_model_temporal_clustered'
 
     # 3. Configure and run the full, but temporally clustered, model for expansion planning
@@ -48,9 +50,9 @@ def main():
     n_temporal_clustered = model_runner.run_expansion_planning(
         n_temporal_clustered, "full_model", config
     )
+    n_temporal_clustered.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_temporal_clustered.name + '.nc'))
 
     plotting.plot_network_with_results_interactive(n_temporal_clustered, config['results_path'])
-
 
     #
     # # 4. Aggregate the grid with built-in PyPSA methods
@@ -73,7 +75,6 @@ def main():
     #     logging.warning(f"Skipping voltage-aware aggregation: {e}")
     #     voltage_aggregated_results_path = None
 
-
     # # 7. Compare the results
     # logging.info("Comparing results between the full model and aggregated versions.")
     # postprocessing.compare_results(
@@ -84,6 +85,8 @@ def main():
     #     },
     #     config=config
     # )
+
+
     logging.info("Workflow completed.")
 
 
