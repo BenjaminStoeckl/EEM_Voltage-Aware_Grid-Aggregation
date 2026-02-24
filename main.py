@@ -24,7 +24,7 @@ def main():
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
-    n_full = data_handling.load_network(os.path.join(config['pypsa_eur_test_case_path'], 'networks', config['test_case']))
+    n_full = data_handling.load_network(config)
 
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
@@ -35,8 +35,6 @@ def main():
     # Aggregate stub lines to simplify the network for testing
     n_agg_stub = pypsa_native.aggregate_stubs(n_full)
     n_agg_stub.name = 'Eur_full_model_agg_stub'
-
-    print(len(n_full.generators), len(n_agg_stub.generators))
 
     # plotting.plot_network(n_agg_stub, config['results_path'])
     # plotting.plot_network_interactive(n_agg_stub, config['results_path'])
@@ -51,7 +49,6 @@ def main():
         n_temporal_clustered, "full_model", config
     )
     n_temporal_clustered.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_temporal_clustered.name + '.nc'))
-
     plotting.plot_network_with_results_interactive(n_temporal_clustered, config['results_path'])
 
     #

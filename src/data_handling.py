@@ -2,18 +2,29 @@
 Module for loading and preparing the initial PyPSA network data.
 """
 import pypsa
+import os
 
 
-def load_network(path_to_network: str) -> pypsa.Network:
+def load_network(config: dict, case: str = None) -> pypsa.Network:
     """
     Loads a PyPSA network from a given file path.
 
     Args:
-        path_to_network (str): The file path to the network data (e.g., .nc file).
+        config (dict): The dictionary containing configuration parameters, including:
+            - 'pypsa_eur_test_case_path': The base path to the PyPSA test cases.
+            - 'test_case': The specific test case file name to load.
+        case (str, optional): An optional specific test case file name to load, which overrides the one specified in the config.
 
     Returns:
         pypsa.Network: The loaded PyPSA network object.
     """
+
+    if case is not None:
+        print(f"Overriding test case from config with provided case: {case}")
+    else:
+        case = config['test_case']
+
+    path_to_network = os.path.join(config['pypsa_eur_test_case_path'], 'networks', case)
 
     print(f"Attempting to load network from: {path_to_network}")
 
