@@ -34,38 +34,39 @@ def main():
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
-    n_full = data_handling.load_network(config)
+    pypsa_model = data_handling.load_network(config)
 
     if config['preprocess_test_case']:
         logging.info(f"Pre-processing test case")
-        n = data_handling.preprocess_network(n_full)
+        n = data_handling.preprocess_network(pypsa_model)
 
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
-    # plotting.plot_network(n_full, config['results_path'])
+    # plotting.plot_network(pypsa_model, config['results_path'])
     # # 2.b Plot as interactive map (optional, requires plotly)
-    # plotting.plot_network_interactive(n_full, config['results_path'])
+    # plotting.plot_network_interactive(pypsa_model, config['results_path'])
 
     if config['aggregate_stub_lines']:
         # Aggregate stub lines to simplify the network for testing
-        n_agg_stub = pypsa_native.aggregate_stubs(n_full)
-        n_agg_stub.name = 'Eur_full_model_agg_stub'
+        pypsa_model = pypsa_native.aggregate_stubs(pypsa_model)
+        pypsa_model.name = 'model_agg_stubs'
 
     # plotting.plot_network(n_agg_stub, config['results_path'])
     # plotting.plot_network_interactive(n_agg_stub, config['results_path'])
 
-    # 3. Cluster the test case temporally
-    n_temporal_clustered = temporal_clustering.aggregate_temporally_by_clustering(n_agg_stub, config['temporal_clustering'])
-    n_temporal_clustered.name = 'Eur_stub_agg_model_temporal_clustered'
+    if config['temporal_aggregation']:
+        # 3. Cluster the test case temporally
+        pypsa_model = temporal_clustering.aggregate_temporally_by_clustering(pypsa_model, config['temporal_clustering'])
+        pypsa_model.name = 'model_clustered_temporal'
 
     # 3. Configure and run the full, but temporally clustered, model for expansion planning
     logging.info("Running expansion planning for the full (unaggregated) model.")
-    n_temporal_clustered = model_runner.run_expansion_planning(
-        n_temporal_clustered, "full_model", config
+    pypsa_model = model_runner.run_expansion_planning(
+        pypsa_model, "full_model", config
     )
 
-    n_temporal_clustered.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_temporal_clustered.name + '.nc'))
-    plotting.plot_network_with_results_interactive(n_temporal_clustered, config['results_path'])
+    pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
+    plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
 
     #
     # # 4. Aggregate the grid with built-in PyPSA methods
