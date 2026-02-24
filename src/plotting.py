@@ -181,6 +181,7 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
             line_flow=line_flow,
             link_flow=link_flow,
         )
+        os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
         map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
