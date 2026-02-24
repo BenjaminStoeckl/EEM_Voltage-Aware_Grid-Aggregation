@@ -32,8 +32,6 @@ def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
     
     # Create a dummy aggregated network for workflow testing
     n_agg = pypsa.Network()
-    n_agg.add("Bus", "AggregatedBus")
-    n_agg.set_snapshots(n.snapshots) # Keep the same snapshots
     
     return n_agg
 

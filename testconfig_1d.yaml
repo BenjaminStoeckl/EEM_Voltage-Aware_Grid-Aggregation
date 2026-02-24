@@ -10,12 +10,16 @@ preprocess_test_case: false
 aggregate_stub_lines: false
 temporal_aggregation: false
 run_full_model: false
+aggregate_by_pypsa: false
 aggregate_by_npap: true
 
 solver_options: {
                   LogToConsole: 0,
                   ResultFile: 'infeasibility.ilp',
 }
+
+optimization_options:
+  include_line_expansion: false
 
 npap_aggregation:
   num_of_clusters: 200
@@ -38,5 +42,3 @@ aggregation_options:
   storage_unit_strategies:
     "1": "sum"
 
-# Placeholder for voltage-aware aggregation options
-voltage_aware_options: {}
