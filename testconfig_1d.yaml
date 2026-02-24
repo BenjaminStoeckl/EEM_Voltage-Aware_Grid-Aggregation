@@ -10,11 +10,16 @@ preprocess_test_case: false
 aggregate_stub_lines: false
 temporal_aggregation: false
 run_full_model: false
+aggregate_by_npap: true
 
 solver_options: {
                   LogToConsole: 0,
                   ResultFile: 'infeasibility.ilp',
 }
+
+npap_aggregation:
+  num_of_clusters: 200
+  strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
 
 temporal_clustering:
   clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'

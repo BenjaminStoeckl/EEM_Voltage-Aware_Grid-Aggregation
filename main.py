@@ -9,7 +9,7 @@ import argparse
 import yaml
 
 from src import data_handling, temporal_clustering, model_runner, plotting, model_analyzer
-from src.aggregation import pypsa_native
+from src.aggregation import pypsa_native, npap_clustering
 
 # Set up basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -62,11 +62,9 @@ def main():
     if config['run_full_model']:
         # 3. Configure and run the full, but temporally clustered, model for expansion planning
         logging.info("Running expansion planning for the full (unaggregated) model.")
-        pypsa_model = model_runner.run_expansion_planning(
-            pypsa_model, "full_model", config
-        )
+        pypsa_model = model_runner.run_expansion_planning(pypsa_model, "full_model", config)
 
-    model_analyzer.analyze_network_results([pypsa_model])
+        model_analyzer.analyze_network_results([pypsa_model])
 
     pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
     plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
@@ -84,13 +82,15 @@ def main():
     #     n_aggregated_pypsa, "pypsa_aggregated", config
     # )
     #
-    # # 6. Prepare for voltage-aware aggregation (placeholder step)
-    # logging.info("Preparing for voltage-aware aggregation (placeholder).")
-    # try:
-    #     voltage_aware.aggregate(n_clustered.copy(), config['voltage_aware_options'])
-    # except NotImplementedError as e:
-    #     logging.warning(f"Skipping voltage-aware aggregation: {e}")
-    #     voltage_aggregated_results_path = None
+    if config['aggregate_by_npap']:
+        # 6. Aggregate the grid with NPAP
+        logging.info("Aggregating the grid using NPAP.")
+        n_aggregated_npap = npap_clustering.aggregate(pypsa_model.copy(), config['npap_aggregation'])
+
+        n_aggregated_npap = model_runner.run_expansion_planning(n_aggregated_npap, 'model_agg_npap', config)
+
+        n_aggregated_npap.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_aggregated_npap.name + '.nc'))
+        plotting.plot_network_with_results_interactive(n_aggregated_npap, config['results_path'])
 
     # # 7. Compare the results
     # logging.info("Comparing results between the full model and aggregated versions.")
@@ -102,6 +102,8 @@ def main():
     #     },
     #     config=config
     # )
+
+        model_analyzer.analyze_network_results([pypsa_model, n_aggregated_npap])
 
 
     logging.info("Workflow completed.")
