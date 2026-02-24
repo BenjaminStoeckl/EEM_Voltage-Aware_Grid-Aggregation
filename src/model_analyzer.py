@@ -29,18 +29,34 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
         # 1. Objective function value (PyPSA default is usually €)
         analysis_row['Objective Function Value [€]'] = n.objective
 
-        # 2. Total production sums (MW summed over 1h snapshots = MWh)
+        # 2. Total production and storage sums (MW summed over 1h snapshots = MWh)
+        gen_total = 0
         if not n.generators_t.p.empty:
+            gen_total = n.generators_t.p.sum().sum()
             generator_production = n.generators_t.p.sum().groupby(n.generators.carrier).sum()
             for carrier, total_production in generator_production.items():
                 analysis_row[f'Production ({carrier}) [MWh]'] = total_production
 
+        discharge_total = 0
+        charge_total = 0
         if not n.storage_units_t.p.empty:
+            # p > 0 is discharging (acting as a generator)
+            discharge_total = n.storage_units_t.p[n.storage_units_t.p > 0].sum().sum()
+
+            # p < 0 is charging (acting as a load). We take the absolute value for reporting.
+            charge_total = abs(n.storage_units_t.p[n.storage_units_t.p < 0].sum().sum())
+
             storage_discharge = n.storage_units_t.p[n.storage_units_t.p > 0].sum().groupby(n.storage_units.carrier).sum()
             for carrier, total_production in storage_discharge.items():
                 analysis_row[f'Production (Storage Discharge {carrier}) [MWh]'] = total_production
 
-        # 3. Curtailed energy and non-supplied energy
+        # Log system totals
+        analysis_row['Total Generator Production [MWh]'] = gen_total
+        analysis_row['Total Storage Discharge [MWh]'] = discharge_total
+        analysis_row['Gross System Production (Gen + Discharge) [MWh]'] = gen_total + discharge_total
+        analysis_row['Total Storage Charge [MWh]'] = charge_total
+
+        # 3. Curtailed energy, non-supplied energy, and total demand
         total_original_load_demand = 0
         total_served_load = 0
         if not n.loads_t.p.empty:
@@ -50,7 +66,14 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
                 total_original_load_demand = (n.loads.p_set * len(n.snapshots)).sum()
 
             total_served_load = n.loads_t.p.sum().sum()
+
+            analysis_row['Total Demand [MWh]'] = total_original_load_demand
+            analysis_row['Gross System Consumption (Demand + Charge) [MWh]'] = total_original_load_demand + charge_total
             analysis_row['Non-Supplied Energy (Unmet Load) [MWh]'] = max(0, total_original_load_demand - total_served_load)
+        else:
+            analysis_row['Total Demand [MWh]'] = 0
+            analysis_row['Gross System Consumption (Demand + Charge) [MWh]'] = charge_total
+            analysis_row['Non-Supplied Energy (Unmet Load) [MWh]'] = 0
 
         # Renewable curtailment
         renewable_carriers = ['wind', 'solar', 'pv']
@@ -67,6 +90,21 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
             analysis_row['Renewable Curtailment [MWh]'] = max(0, available_renewable_production - actual_renewable_production)
         else:
             analysis_row['Renewable Curtailment [MWh]'] = 0
+
+        # 4. Line Investments (Capacity added and Cost)
+        if not n.lines.empty and 's_nom_extendable' in n.lines.columns:
+            if n.lines.s_nom_extendable.any():
+                extendable_lines = n.lines[n.lines.s_nom_extendable]
+                added_capacity = (extendable_lines.s_nom_opt - extendable_lines.s_nom).clip(lower=0)
+
+                analysis_row['Added Line Capacity [MVA]'] = added_capacity.sum()
+                analysis_row['Line Investment Cost [€]'] = (added_capacity * extendable_lines.capital_cost).sum()
+            else:
+                analysis_row['Added Line Capacity [MVA]'] = 0
+                analysis_row['Line Investment Cost [€]'] = 0
+        else:
+            analysis_row['Added Line Capacity [MVA]'] = 0
+            analysis_row['Line Investment Cost [€]'] = 0
 
         results_data.append(analysis_row)
 
