@@ -8,7 +8,7 @@ import argparse
 
 import yaml
 
-from src import data_handling, temporal_clustering, model_runner, plotting
+from src import data_handling, temporal_clustering, model_runner, plotting, model_analyzer
 from src.aggregation import pypsa_native
 
 # Set up basic logging
@@ -59,11 +59,14 @@ def main():
         pypsa_model = temporal_clustering.aggregate_temporally_by_clustering(pypsa_model, config['temporal_clustering'])
         pypsa_model.name = 'model_clustered_temporal'
 
-    # 3. Configure and run the full, but temporally clustered, model for expansion planning
-    logging.info("Running expansion planning for the full (unaggregated) model.")
-    pypsa_model = model_runner.run_expansion_planning(
-        pypsa_model, "full_model", config
-    )
+    if config['run_full_model']:
+        # 3. Configure and run the full, but temporally clustered, model for expansion planning
+        logging.info("Running expansion planning for the full (unaggregated) model.")
+        pypsa_model = model_runner.run_expansion_planning(
+            pypsa_model, "full_model", config
+        )
+
+    model_analyzer.analyze_network_results([pypsa_model])
 
     pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
     plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
