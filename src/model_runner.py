@@ -22,10 +22,8 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     results_dir = os.path.join(config['results_path'], model_name)
     os.makedirs(results_dir, exist_ok=True)
 
-    # TODO: Configure the model for expansion planning based on config.
-    # This would involve making lines and generators extendable.
-    # For example:
-    # n.lines["s_nom_extendable"] = True
+    # Configure the network for expansion planning
+    n.lines["s_nom_extendable"] = config['optimization_options']['include_line_expansion']
     # n.generators["p_nom_extendable"] = True
 
     print(f"Running optimization for '{model_name}'...")
@@ -33,8 +31,12 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     # A simple solve, replace with a proper optimization call
     try:
         path_temp_files = os.path.join(config['path_for_temporary_files'], 'pypsa_model.lp')
-        n.optimize(solver_name="gurobi", problem_fn=path_temp_files, solver_options=config["solver_options"],
-                   compute_infeasibilities=True)
+        n.optimize(solver_name="gurobi",
+                   problem_fn=path_temp_files,
+                   solver_options=config["solver_options"],
+                   compute_infeasibilities=True,
+                   include_objective_constant=True)
+
         print(f"Optimization for '{model_name}' complete (simulation).")
     except Exception as e:
         print(f"Could not run optimization for '{model_name}', Error: {e}")
