@@ -137,9 +137,15 @@ def aggregate_temporally_by_clustering(n: pypsa.Network, config: dict) -> pypsa.
         pypsa.Network: The aggregated PyPSA network.
     """
 
-    # get snapshot_cluster_series from temporal clustering
-    snapshot_cluster_series = create_snapshot_series_from_temporal_clustering(n, temporal_clustering_config=config)
+    if config['clustering_strategy'] == 'downsampling':
+        print("Using downsampling for temporal aggregation.")
+        return aggregate_temporaly_by_downsampling(n, config)
+    elif config['clustering_strategy'] == 'kmeans':
+        print("Using k-means clustering for temporal aggregation.")
+        # get snapshot_cluster_series from temporal clustering
+        snapshot_cluster_series = create_snapshot_series_from_temporal_clustering(n, temporal_clustering_config=config)
+        clustered = from_snapshot_map(n, snapshot_cluster_series)
+        return clustered.n
+    else:
+        raise ValueError(f"Unsupported clustering strategy: {config['clustering_strategy']}, Use: 'downsampling' or 'kmeans'.")
 
-    clustered = from_snapshot_map(n, snapshot_cluster_series)
-
-    return clustered.n

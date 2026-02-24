@@ -10,6 +10,7 @@ solver_options: {
 }
 
 temporal_clustering:
+  clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
   n_timestep_clusters: 1
 
 # Options for the native PyPSA aggregation strategy.
