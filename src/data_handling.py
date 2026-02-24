@@ -29,7 +29,7 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     print(f"Attempting to load network from: {path_to_network}")
 
     n_full = pypsa.Network(path_to_network)
-    n_full.name = 'Eur_full_model'
+    n_full.name = 'full_model'
 
     return n_full
 
@@ -61,3 +61,27 @@ def preprocess_network(n: pypsa.Network) -> pypsa.Network:
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
     return n
+
+
+def export_network_and_results(n: pypsa.Network, config: dict, file_name: str = "network") -> None:
+    """
+    Exports a PyPSA network, including any attached optimization results, to a NetCDF file.
+
+    The output directory is determined from the 'results_path' key in the provided configuration dictionary.
+    The function creates the specified output folder if it does not already exist.
+    The network is saved in NetCDF format, which is suitable for storing PyPSA Network objects
+    along with their components and attributes, including optimization results.
+
+    Args:
+        n (pypsa.Network): The PyPSA network object to export.
+        config (dict): The dictionary containing configuration parameters, including 'results_path'.
+        file_name (str, optional): The base name for the exported NetCDF file.
+                                   Defaults to "network".
+    """
+    output_folder = os.path.normpath(config['results_path'])
+
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder, exist_ok=True)
+
+    file_path = os.path.join(output_folder, f"{file_name}.nc")
+    n.export_to_netcdf(file_path)
