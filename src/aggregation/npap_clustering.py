@@ -46,7 +46,7 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict) -> pypsa.Network:
 
     network = result.n
     network.name = 'model_agg_npap'
-    network.sanatize()
+    network.sanitize()
 
     return network
 
