@@ -31,17 +31,33 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     n_full = pypsa.Network(path_to_network)
     n_full.name = 'Eur_full_model'
 
+    return n_full
+
+
+
+def preprocess_network(n: pypsa.Network) -> pypsa.Network:
+    """
+    Preprocesses the PyPSA network based on the provided configuration.
+
+    Args:
+        n (pypsa.Network): The original PyPSA network to preprocess.
+
+    Returns:
+        pypsa.Network: The preprocessed PyPSA network.
+    """
+
+
     # Add a slack generator to each bus to ensure feasibility
-    n_full.add("Generator", n_full.buses.index + " slack",
-               bus=n_full.buses.index,
+    n.add("Generator", n.buses.index + " slack",
+               bus=n.buses.index,
                p_nom=10000,
                marginal_cost=10000,
                carrier="slack")
 
     # Sanitize the network (add slack bus, define carriers, etc.)
-    n_full.sanitize()
+    n.sanitize()
 
     # Set num_parallel of lines to a minimum of 1, if the line is active, to avoid infinite impedance
-    n_full.lines.loc[(n_full.lines.active & n_full.lines.num_parallel == 0), 'num_parallel'] = 1
+    n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
-    return n_full
+    return n

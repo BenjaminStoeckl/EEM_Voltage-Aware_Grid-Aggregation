@@ -4,6 +4,10 @@ path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
 test_case: "elec.nc"
 
+preprocess_test_case: true
+aggregate_stub_lines: true
+temporal_aggregation: true
+
 solver_options: {
                   LogToConsole: 0,
                   ResultFile: 'infeasibility.ilp',

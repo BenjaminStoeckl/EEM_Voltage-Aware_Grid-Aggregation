@@ -36,15 +36,20 @@ def main():
     # 1. Load a plottable PyPSA example network
     n_full = data_handling.load_network(config)
 
+    if config['preprocess_test_case']:
+        logging.info(f"Pre-processing test case")
+        n = data_handling.preprocess_network(n_full)
+
     # 2. Plot the initial grid setup for verification
     # 2.a Plot as picture
     # plotting.plot_network(n_full, config['results_path'])
     # # 2.b Plot as interactive map (optional, requires plotly)
     # plotting.plot_network_interactive(n_full, config['results_path'])
 
-    # Aggregate stub lines to simplify the network for testing
-    n_agg_stub = pypsa_native.aggregate_stubs(n_full)
-    n_agg_stub.name = 'Eur_full_model_agg_stub'
+    if config['aggregate_stub_lines']:
+        # Aggregate stub lines to simplify the network for testing
+        n_agg_stub = pypsa_native.aggregate_stubs(n_full)
+        n_agg_stub.name = 'Eur_full_model_agg_stub'
 
     # plotting.plot_network(n_agg_stub, config['results_path'])
     # plotting.plot_network_interactive(n_agg_stub, config['results_path'])
@@ -58,6 +63,7 @@ def main():
     n_temporal_clustered = model_runner.run_expansion_planning(
         n_temporal_clustered, "full_model", config
     )
+
     n_temporal_clustered.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_temporal_clustered.name + '.nc'))
     plotting.plot_network_with_results_interactive(n_temporal_clustered, config['results_path'])
 
