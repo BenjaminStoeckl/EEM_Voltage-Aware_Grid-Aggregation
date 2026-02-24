@@ -59,6 +59,8 @@ def main():
         pypsa_model = temporal_clustering.aggregate_temporally_by_clustering(pypsa_model, config['temporal_clustering'])
         pypsa_model.name = 'model_clustered_temporal'
 
+    pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
+
     if config['run_full_model']:
         # 3. Configure and run the full, but temporally clustered, model for expansion planning
         logging.info("Running expansion planning for the full (unaggregated) model.")

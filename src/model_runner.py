@@ -38,6 +38,7 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
                    include_objective_constant=True)
 
         print(f"Optimization for '{model_name}' complete (simulation).")
+        n.name = f'{model_name}_solved'
     except Exception as e:
         print(f"Could not run optimization for '{model_name}', Error: {e}")
 
