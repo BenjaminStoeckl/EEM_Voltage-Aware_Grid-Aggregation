@@ -1,16 +1,15 @@
 """
 Module for temporal (time-series) clustering of the network.
 """
-import pandas as pd
-import tsam.timeseriesaggregation as tsam
 from typing import Dict, Optional
 
+import pandas as pd
 import pypsa
-
+import tsam.timeseriesaggregation as tsam
 from pypsa.clustering.temporal import downsample, from_snapshot_map
 
 
-def aggregate_temporaly_by_downsampling(n: pypsa.Network, temporal_config: Dict) -> pypsa.Network:
+def aggregate_temporally_by_downsampling(n: pypsa.Network, temporal_config: Dict) -> pypsa.Network:
     """
     Performs temporal clustering on the network's time series data.
 
@@ -20,17 +19,17 @@ def aggregate_temporaly_by_downsampling(n: pypsa.Network, temporal_config: Dict)
     Args:
         n (pypsa.Network): The PyPSA network with full time series.
         temporal_config (Dict): A dictionary containing clustering parameters,
-                                e.g., {'n_clusters': 10}.
+                                e.g., {'n_timestep_clusters': 10}.
 
     Returns:
         pypsa.Network: A new network object with clustered time series.
     """
-    print(f"Performing temporal clustering to {temporal_config['n_clusters']} periods...")
+    print(f"Performing temporal clustering to {temporal_config['n_timestep_clusters']} periods...")
     # The actual clustering logic will be implemented here.
     # For now, we'll just return the network as is.
     # A typical implementation would use tsam or pypsa.clustering.
 
-    clustered = downsample(n, int(len(n.snapshots)/temporal_config['n_clusters']))
+    clustered = downsample(n, int(len(n.snapshots) / temporal_config['n_timestep_clusters']))
 
     return clustered.n
 
@@ -77,7 +76,7 @@ def create_snapshot_series_from_temporal_clustering(
         # Assuming common renewable carriers. This list might need adjustment
         # depending on the specific PyPSA network data.
         renewable_carriers = ['wind', 'solar', 'hydro', 'solar_rooftop']
-        
+
         if not n.generators.empty:
             renewable_generators = n.generators[n.generators.carrier.isin(renewable_carriers)]
             if not renewable_generators.empty:
@@ -97,7 +96,6 @@ def create_snapshot_series_from_temporal_clustering(
     # individual 'demand' and 'renewables' series as features.
     # If a single 'net_load' series was desired, the previous implementation should be used.
     # The current interpretation is to provide features for a more nuanced temporal clustering.
-
 
     # 2. Perform tsam K-Means Clustering on the network time series
     aggregation = tsam.TimeSeriesAggregation(
@@ -139,7 +137,7 @@ def aggregate_temporally_by_clustering(n: pypsa.Network, config: dict) -> pypsa.
 
     if config['clustering_strategy'] == 'downsampling':
         print("Using downsampling for temporal aggregation.")
-        return aggregate_temporaly_by_downsampling(n, config)
+        return aggregate_temporally_by_downsampling(n, config)
     elif config['clustering_strategy'] == 'kmeans':
         print("Using k-means clustering for temporal aggregation.")
         # get snapshot_cluster_series from temporal clustering
@@ -148,4 +146,3 @@ def aggregate_temporally_by_clustering(n: pypsa.Network, config: dict) -> pypsa.
         return clustered.n
     else:
         raise ValueError(f"Unsupported clustering strategy: {config['clustering_strategy']}, Use: 'downsampling' or 'kmeans'.")
-
