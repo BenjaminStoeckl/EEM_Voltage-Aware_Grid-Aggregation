@@ -62,26 +62,24 @@ def main():
     if config['run_full_model']:
         # 3. Configure and run the full, but temporally clustered, model for expansion planning
         logging.info("Running expansion planning for the full (unaggregated) model.")
-        pypsa_model = model_runner.run_expansion_planning(pypsa_model, "full_model", config)
+        full_pypsa_model = model_runner.run_expansion_planning(pypsa_model, "full_model", config)
 
-        model_analyzer.analyze_network_results([pypsa_model])
+        model_analyzer.analyze_network_results([full_pypsa_model])
 
-    pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
+        full_pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', full_pypsa_model.name + '.nc'))
     plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
 
-    #
-    # # 4. Aggregate the grid with built-in PyPSA methods
-    # logging.info("Aggregating the grid using native PyPSA methods (geographical).")
-    # n_aggregated_pypsa = pypsa_native.aggregate(
-    #     n_clustered.copy(), config['aggregation_options']
-    # )
-    #
-    # # 5. Run the PyPSA-aggregated model
-    # logging.info("Running expansion planning for the PyPSA-aggregated model.")
-    # pypsa_aggregated_results_path = model_runner.run_expansion_planning(
-    #     n_aggregated_pypsa, "pypsa_aggregated", config
-    # )
-    #
+    # Aggregate with native pypsa methods:
+    if config['aggregate_by_pypsa']:
+        logging.info("Aggregating the grid using native PyPSA methods (geographical).")
+        n_aggregated_pypsa = pypsa_native.aggregate(pypsa_model.copy(), config['aggregation_options'])
+
+        # 5. Run the PyPSA-aggregated model
+        logging.info("Running expansion planning for the PyPSA-aggregated model.")
+        pypsa_aggregated_results_path = model_runner.run_expansion_planning(
+            n_aggregated_pypsa, "pypsa_aggregated", config
+        )
+
     if config['aggregate_by_npap']:
         # 6. Aggregate the grid with NPAP
         logging.info("Aggregating the grid using NPAP.")
@@ -90,7 +88,7 @@ def main():
         n_aggregated_npap = model_runner.run_expansion_planning(n_aggregated_npap, 'model_agg_npap', config)
 
         n_aggregated_npap.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_aggregated_npap.name + '.nc'))
-        plotting.plot_network_with_results_interactive(n_aggregated_npap, config['results_path'])
+        plotting.plot_network_interactive(n_aggregated_npap, config['results_path'])
 
     # # 7. Compare the results
     # logging.info("Comparing results between the full model and aggregated versions.")
