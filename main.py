@@ -4,6 +4,7 @@ Main script to run the grid aggregation testing framework.
 
 import logging
 import os
+import argparse
 
 import yaml
 
@@ -18,9 +19,18 @@ def main():
     """
     Orchestrates the entire workflow for comparing grid aggregation methods.
     """
+    parser = argparse.ArgumentParser(description="Run the grid aggregation testing framework.")
+    parser.add_argument(
+        "config_file",
+        nargs="?",  # Makes the argument optional
+        default="testconfig_1d.yaml",
+        help="Path to the configuration file (e.g., config_5d.yaml or testconfig_1d.yaml)",
+    )
+    args = parser.parse_args()
+
     # 0. Load configuration
-    logging.info("Loading configuration from testconfig_1d.yaml")
-    with open("testconfig_1d.yaml") as f:
+    logging.info(f"Loading configuration from {args.config_file}")
+    with open(args.config_file) as f:
         config = yaml.safe_load(f)
 
     # 1. Load a plottable PyPSA example network
