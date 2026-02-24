@@ -144,30 +144,8 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
         output_file (str): The base directory path where the plot HTML file
                            will be saved within a subdirectory named after the network.
     """
-    """
-    Generates an interactive plot of the network using geopandas and plotly,
-    and saves it to an HTML file.
-
-    Requires the 'geopandas' and 'plotly' libraries.
-
-    Args:
-        n (pypsa.Network): The PyPSA network to plot.
-        output_file (str): Path to save the output plot HTML file.
-    """
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
-
-        # eb = (
-        #     n.statistics.energy_balance(
-        #         groupby=["bus", "carrier"],
-        #         components=["Generator", "Load", "StorageUnit"],
-        #     )
-        #     .groupby(["bus", "carrier"])
-        #     .sum()
-        # )
-
-        # line_flow = (n.lines_t.p0.sum(axis=0)/n.lines_t.p0.sum(axis=0).sum())*10
-        # link_flow = (n.links_t.p0.sum(axis=0)/n.links_t.p0.sum(axis=0).sum())*10
 
         line_flow = n.lines_t.p0.sum(axis=0)
         link_flow = n.links_t.p0.sum(axis=0)
@@ -181,7 +159,7 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
             line_flow=line_flow,
             link_flow=link_flow,
         )
-        os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
+        os.makedirs(os.path.join(output_file, n.name), exist_ok=True)
         map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
