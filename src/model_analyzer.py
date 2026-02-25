@@ -173,7 +173,8 @@ def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
 
     print("\n--- Active Slack Production by Node ---")
     for bus, val in bus_slack_summary.items():
-        print(f"Bus {bus}: {val:.2f} MWh")
+        if val > 0.1:  # Only print significant slack production
+            print(f"Bus {bus}: {val:.2f} MWh")
 
     print(f"Total System-wide Slack Production: {bus_slack_summary.sum():.2f} MWh")
 
