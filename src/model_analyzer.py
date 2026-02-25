@@ -128,3 +128,53 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
         print(f"Analysis results exported to: {output_path}")
 
     return results_df
+
+
+def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
+    """
+    Identifies buses where slack generators are producing non-zero power
+    and calculates the total production sum for each of those nodes.
+
+    Args:
+        n (pypsa.Network): The optimized PyPSA network.
+
+    Returns:
+        pd.Series: Total slack production indexed by bus name.
+    """
+    # 1. Identify which generators are 'slack'
+    slack_gen_mask = n.generators.carrier == "slack"
+    slack_gens = n.generators[slack_gen_mask]
+
+    if slack_gens.empty or n.generators_t.p.empty:
+        print("No slack generators found or no production data available.")
+        return pd.Series(dtype=float)
+
+    # 2. Get the time-series production (p) for only the slack generators
+    slack_p = n.generators_t.p[slack_gens.index]
+
+    # 3. Calculate the total sum over all snapshots for each generator
+    slack_totals = slack_p.sum()
+
+    # 4. Filter for only those that are actually producing (sum > 0)
+    active_slack_totals = slack_totals[slack_totals > 1e-3]  # Use small epsilon for float precision
+
+    if active_slack_totals.empty:
+        print("No active slack production detected (All slack generators are at 0).")
+        return pd.Series(dtype=float)
+
+    # 5. Map the generator names back to their respective buses
+    # We group by bus in case a single bus has multiple slack generators
+    active_slack_df = pd.DataFrame({
+        'production': active_slack_totals,
+        'bus': n.generators.loc[active_slack_totals.index, 'bus']
+    })
+
+    bus_slack_summary = active_slack_df.groupby('bus')['production'].sum()
+
+    print("\n--- Active Slack Production by Node ---")
+    for bus, val in bus_slack_summary.items():
+        print(f"Bus {bus}: {val:.2f} MWh")
+
+    print(f"Total System-wide Slack Production: {bus_slack_summary.sum():.2f} MWh")
+
+    return bus_slack_summary
