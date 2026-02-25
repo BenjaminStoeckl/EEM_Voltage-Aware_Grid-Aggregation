@@ -45,7 +45,7 @@ def main():
 
     if config['preprocess_test_case']:
         logging.info(f"Pre-processing test case")
-        n = data_handling.preprocess_network(pypsa_model)
+        pypsa_model = data_handling.preprocess_network(pypsa_model)
 
     # -------------------------------------------------------------------------
     # 4. Initial Network Simplification (Stubs & Temporal)
