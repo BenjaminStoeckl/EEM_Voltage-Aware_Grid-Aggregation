@@ -81,7 +81,7 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_geo_va']:
         logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-        n_agg_geo_va = pypsa_native.aggregate(pypsa_model.copy(), config['geo_va_aggregation'])
+        n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'])
 
         n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
 
