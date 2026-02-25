@@ -23,7 +23,11 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     os.makedirs(results_dir, exist_ok=True)
 
     # Configure the network for expansion planning
-    n.lines["s_nom_extendable"] = config['optimization_options']['include_line_expansion']
+    # n.lines["s_nom_extendable"] = config['optimization_options']['include_line_expansion']
+
+    if config['optimization_options']['include_line_expansion']:
+        n.lines.loc[n.lines['under_construction'] == 1, 's_nom_extendable'] = True
+
     # n.generators["p_nom_extendable"] = True
 
     print(f"Running optimization for '{model_name}'...")
