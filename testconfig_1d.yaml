@@ -9,8 +9,8 @@ test_case: "model_clustered_temporal_downsampling_3h.nc"
 preprocess_test_case: false
 aggregate_stub_lines: false
 temporal_aggregation: false
-run_full_model: true
-aggregate_geo_va: false
+run_full_model: false
+aggregate_geo_va: true
 aggregate_geo_non_va: false
 
 solver_options: {
@@ -23,9 +23,25 @@ solver_options: {
 optimization_options:
   include_line_expansion: true  # sets all lines 'under_construction' to expandable
 
+network_expansion_costs:
+  line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
+  line_expansion_cost_380: 10.72 # in Eur/MVA/km/a
+  trafo_expansion_cost_380-220: 136.78 # in Eur/MVA/a
+
 geo_va_aggregation:
   num_of_clusters: 200
   strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+
+  line_strategies:
+    x: "equivalent_reactance"
+    r: "equivalent_reactance"
+    s_nom: "sum"
+    length: "average"
+    capital_cost: "average"
+    s_max_pu: "sum"
+    num_parallel: "sum"
+    v_nom: "average"
+    carrier: "first"
 
 geo_non_va_aggregation:
   num_of_clusters: 200

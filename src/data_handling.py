@@ -59,6 +59,8 @@ def preprocess_network(n: pypsa.Network) -> pypsa.Network:
     # Set num_parallel of lines to a minimum of 1, if the line is active, to avoid infinite impedance
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
+    n = _add_network_expansion_costs(n)
+
     return n
 
 
@@ -84,3 +86,44 @@ def export_network_and_results(n: pypsa.Network, config: dict, file_name: str = 
 
     file_path = os.path.join(output_folder, f"{file_name}.nc")
     n.export_to_netcdf(file_path)
+
+
+def _add_network_expansion_costs(n: pypsa.Network, expansion_cost: dict) -> pypsa.Network:
+    """
+    Adds expansion cost attributes to the network's lines and generators based on the provided configuration.
+
+    This function checks the configuration for line and generator expansion costs and updates the network's
+    components accordingly. It ensures that the necessary columns for expansion costs are present in the
+    network's lines and generators DataFrames, and fills them with the specified values from the configuration.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to which expansion costs will be added.
+            expansion_cost (dict): A dictionary containing expansion cost values for lines and generators, with keys:
+                - 'line_expansion_cost_220': The annualized cost per unit of line capacity expansion.
+                - 'line_expansion_cost_380': The annualized cost per unit of line capacity expansion.
+                - 'trafo_expansion_cost_380-220': The annualized cost per unit of trafo capacity expansion.
+
+
+    Returns:
+        pypsa.Network: The updated PyPSA network with expansion cost attributes added.
+    """
+    # Add line expansion costs if specified in the config
+    if 'line_expansion_cost_220' in expansion_cost:
+        if expansion_cost['line_expansion_cost_220'] is not None:
+            mask = n.lines['v_nom'] < 300
+            if mask.any():
+                n.lines.loc[mask, 'capital_cost'] = expansion_cost['line_expansion_cost_220'] * n.lines.loc[mask, 'length']
+
+    # Add line expansion costs for 380kV lines if specified in the config
+    if 'line_expansion_cost_380' in expansion_cost:
+        if expansion_cost['line_expansion_cost_380'] is not None:
+            mask = n.lines['v_nom'] >= 300
+            if mask.any():
+                n.lines.loc[mask, 'capital_cost'] = expansion_cost['line_expansion_cost_380'] * n.lines.loc[mask, 'length']
+
+    # Add transformer expansion costs if specified in the config
+    if 'trafo_expansion_cost_380-220' in expansion_cost:
+        if expansion_cost['trafo_expansion_cost_380-220'] is not None:
+            n.transformers['capital_cost'] = expansion_cost['trafo_expansion_cost_380-220']
+
+    return n
