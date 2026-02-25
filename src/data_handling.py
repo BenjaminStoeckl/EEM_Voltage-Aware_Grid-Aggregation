@@ -35,7 +35,7 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     return n_full
 
 
-def preprocess_network(n: pypsa.Network) -> pypsa.Network:
+def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     """
     Preprocesses the PyPSA network based on the provided configuration.
 
@@ -59,7 +59,7 @@ def preprocess_network(n: pypsa.Network) -> pypsa.Network:
     # Set num_parallel of lines to a minimum of 1, if the line is active, to avoid infinite impedance
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
-    n = _add_network_expansion_costs(n)
+    n = _add_network_expansion_costs(n, config['network_expansion_costs'])
 
     return n
 

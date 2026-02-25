@@ -45,7 +45,7 @@ def main():
 
     if config['preprocess_test_case']:
         logging.info(f"Pre-processing test case")
-        pypsa_model = data_handling.preprocess_network(pypsa_model)
+        pypsa_model = data_handling.preprocess_network(pypsa_model, config)
 
     # -------------------------------------------------------------------------
     # 4. Initial Network Simplification (Stubs & Temporal)
@@ -73,6 +73,7 @@ def main():
         model_analyzer.analyze_network_results([full_pypsa_model])
 
         full_pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', full_pypsa_model.name + '.nc'))
+        pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
 
     plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
 

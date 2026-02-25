@@ -1,17 +1,17 @@
 # Always use double backslashes in Windows paths to avoid issues with escape characters.
 
-pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA"
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
 results_path: "C:\\BeSt\\VA-GA\\results"
 path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
-test_case: "model_clustered_temporal_downsampling_3h.nc"
+test_case: "elec.nc"
 
-preprocess_test_case: false
-aggregate_stub_lines: false
-temporal_aggregation: false
-run_full_model: false
+preprocess_test_case: true
+aggregate_stub_lines: true
+temporal_aggregation: true
+run_full_model: true
 aggregate_geo_va: true
-aggregate_geo_non_va: false
+aggregate_geo_non_va: true
 
 solver_options: {
                   LogToConsole: 0,
