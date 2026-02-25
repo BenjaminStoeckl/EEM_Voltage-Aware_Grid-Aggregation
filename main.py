@@ -2,9 +2,9 @@
 Main script to run the grid aggregation testing framework.
 """
 
+import argparse
 import logging
 import os
-import argparse
 
 import yaml
 
@@ -73,44 +73,42 @@ def main():
         model_analyzer.analyze_network_results([full_pypsa_model])
 
         full_pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', full_pypsa_model.name + '.nc'))
-    
+
     plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
 
     # -------------------------------------------------------------------------
-    # 6. Grid Aggregation: Native PyPSA Methods
+    # 6. Grid Aggregation: NPAP - VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_by_pypsa']:
-        logging.info("Aggregating the grid using native PyPSA methods (geographical).")
-        n_aggregated_pypsa = pypsa_native.aggregate(pypsa_model.copy(), config['aggregation_options'])
+    if config['aggregate_geo_va']:
+        logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
+        n_agg_geo_va = pypsa_native.aggregate(pypsa_model.copy(), config['geo_va_aggregation'])
 
-        logging.info("Running expansion planning for the PyPSA-aggregated model.")
-        pypsa_aggregated_results_path = model_runner.run_expansion_planning(
-            n_aggregated_pypsa, "pypsa_aggregated", config
-        )
+        n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
+
+        n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
+        plotting.plot_network_interactive(n_agg_geo_va, config['results_path'])
 
     # -------------------------------------------------------------------------
-    # 7. Grid Aggregation: NPAP Clustering
+    # 7. Grid Aggregation: NPAP - non VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_by_npap']:
-        logging.info("Aggregating the grid using NPAP.")
-        n_aggregated_npap = npap_clustering.aggregate(pypsa_model.copy(), config['npap_aggregation'])
+    if config['aggregate_geo_non_va']:
+        logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
+        n_agg_geo_non_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_non_va_aggregation'])
 
-        n_aggregated_npap = model_runner.run_expansion_planning(n_aggregated_npap, 'model_agg_npap', config)
+        n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
-        n_aggregated_npap.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_aggregated_npap.name + '.nc'))
-        plotting.plot_network_interactive(n_aggregated_npap, config['results_path'])
+        n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
+        plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'])
 
     # -------------------------------------------------------------------------
     # 8. Results Analysis & Comparison
     # -------------------------------------------------------------------------
     logging.info("Comparing results between the full model and aggregated versions.")
     model_analyzer.analyze_active_slack_nodes(pypsa_model)
-
-    model_analyzer.analyze_network_results([pypsa_model])
-
-
-    logging.info("Workflow completed.")
-
+    if config['aggregate_geo_va'] and config['aggregate_geo_non_va']:
+        model_analyzer.analyze_active_slack_nodes(n_agg_geo_va)
+        model_analyzer.analyze_active_slack_nodes(n_agg_geo_non_va)
+        model_analyzer.analyze_network_results([pypsa_model, n_agg_geo_va, n_agg_geo_non_va])
 
     logging.info("Workflow completed.")
 

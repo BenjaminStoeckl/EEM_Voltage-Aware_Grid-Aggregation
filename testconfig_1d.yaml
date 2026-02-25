@@ -10,8 +10,8 @@ preprocess_test_case: false
 aggregate_stub_lines: false
 temporal_aggregation: false
 run_full_model: true
-aggregate_by_pypsa: false
-aggregate_by_npap: false
+aggregate_geo_va: false
+aggregate_geo_non_va: false
 
 solver_options: {
                   LogToConsole: 0,
@@ -23,9 +23,13 @@ solver_options: {
 optimization_options:
   include_line_expansion: true  # sets all lines 'under_construction' to expandable
 
-npap_aggregation:
+geo_va_aggregation:
   num_of_clusters: 200
   strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+
+geo_non_va_aggregation:
+  num_of_clusters: 200
+  strategy: 'geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
 
   line_strategies:
     x: "equivalent_reactance"
