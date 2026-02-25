@@ -27,6 +27,7 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
 
     if config['optimization_options']['include_line_expansion']:
         n.lines.loc[n.lines['under_construction'] == 1, 's_nom_extendable'] = True
+        n.transformers['s_nom_extendable'] = True
 
     # n.generators["p_nom_extendable"] = True
 
