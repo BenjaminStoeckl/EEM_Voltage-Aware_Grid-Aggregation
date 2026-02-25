@@ -41,11 +41,13 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict) -> pypsa.Network:
         strategy=va_aggregation_config['strategy'],
         include_transformers=True,
         include_links=True,
-        voltage_levels=[220, 380]
+        voltage_levels=[220, 380],
+        line_strategies=va_aggregation_config['line_strategies'],
     )
 
     network = result.n
     network.name = 'model_agg_npap'
+    # network.lines['under_construction'] = 0  # Ensure no lines are marked as under construction after aggregation
     network.sanitize()
 
     return network

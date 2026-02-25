@@ -21,11 +21,21 @@ solver_options: {
 }
 
 optimization_options:
-  include_line_expansion: false
+  include_line_expansion: true  # sets all lines 'under_construction' to expandable
 
 npap_aggregation:
   num_of_clusters: 200
   strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+
+  line_strategies:
+    x: "equivalent_reactance"
+    r: "equivalent_reactance"
+    s_nom: "sum"
+    length: "average"
+    capital_cost: "average"
+    s_max_pu: "sum"
+    num_parallel: "sum"
+    v_nom: "average"
 
 temporal_clustering:
   clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
