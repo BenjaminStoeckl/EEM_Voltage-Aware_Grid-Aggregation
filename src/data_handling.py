@@ -50,8 +50,8 @@ def preprocess_network(n: pypsa.Network) -> pypsa.Network:
     # Add a slack generator to each bus to ensure feasibility
     n.add("Generator", n.buses.index + " slack",
                bus=n.buses.index,
-               p_nom=10000,
-               marginal_cost=10000,
+               p_nom=10000,  # Set a high nominal power to ensure it can meet any demand
+               marginal_cost=n.generators['marginal_cost'].max() * 2,  # Set a high marginal cost to discourage use
                carrier="slack")
 
     # Sanitize the network (add slack bus, define carriers, etc.)
