@@ -6,17 +6,13 @@ representations of electrical grids, including geographical plots,
 and visualizations incorporating simulation results.
 """
 
-import pypsa
-import os
 import logging
-import matplotlib.pyplot as plt
-import geopandas as gpd
-import plotly.express as px
-import plotly.graph_objects as go
-from shapely.geometry import LineString
+import os
 
 import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
 import pandas as pd
+import pypsa
 
 
 def get_line_colors_by_voltage(n: pypsa.Network) -> pd.Series:
@@ -36,12 +32,12 @@ def get_line_colors_by_voltage(n: pypsa.Network) -> pd.Series:
         for line_name, line in n.lines.iterrows():
             bus0_name = line.bus0
             bus0_v_nom = n.buses.loc[bus0_name, 'v_nom']
-            
+
             if bus0_v_nom < 300:
                 line_colors_by_voltage.loc[line_name] = 'green'
             else:
                 line_colors_by_voltage.loc[line_name] = 'red'
-        
+
         return line_colors_by_voltage
 
     except Exception as e:
@@ -74,7 +70,7 @@ def plot_network(n: pypsa.Network, output_file: str):
     """
     try:
         logging.info(f"Generating static plot and saving to {output_file}...")
-        
+
         # Ensure the directory exists
         os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
 
@@ -84,10 +80,9 @@ def plot_network(n: pypsa.Network, output_file: str):
         n.plot(ax=ax, bus_color='red', line_color='black', line_width=2)
         fig.savefig(os.path.join(output_file, n.name, 'map.svg'))
 
-        
+
     except Exception as e:
         logging.error(f"{e}")
-
 
 
 def plot_network_interactive(n: pypsa.Network, output_file: str):
@@ -124,7 +119,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str):
         map = n.explore(line_color=get_line_colors_by_voltage(n),
                         transformer_width=3,
                         tooltip=True,
-                        jitter=0.05,)
+                        jitter=0.05, )
         map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
@@ -149,7 +144,6 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
 
         line_flow = n.lines_t.p0.sum(axis=0)
         link_flow = n.links_t.p0.sum(axis=0)
-
 
         map = n.explore(
             # bus_size=eb,
