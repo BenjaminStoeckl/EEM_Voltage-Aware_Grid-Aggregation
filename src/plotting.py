@@ -119,7 +119,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str):
         logging.info(f"Generating interactive plot and saving to {output_file}...")
 
         # Ensure the directory exists
-        os.makedirs(os.path.dirname(os.path.join(output_file, n.name)), exist_ok=True)
+        os.makedirs(os.path.join(output_file, n.name), exist_ok=True)
 
         map = n.explore(line_color=get_line_colors_by_voltage(n),
                         transformer_width=3,
