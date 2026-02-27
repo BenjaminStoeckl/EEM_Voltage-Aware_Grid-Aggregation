@@ -151,8 +151,8 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
 
-        line_flow = n.lines_t.p0.sum(axis=0)/8760
-        link_flow = n.links_t.p0.sum(axis=0)/8760
+        line_flow = n.lines_t.p0.sum(axis=0)/len(n.lines_t.p0)
+        link_flow = n.links_t.p0.sum(axis=0)/len(n.links_t.p0)
 
         map = n.explore(
             # bus_size=eb,
