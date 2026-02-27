@@ -61,6 +61,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
 
     n = _add_network_expansion_costs(n, config['network_expansion_costs'])
 
+    n.lines['s_nom_min'] = n.lines['s_nom']  # Set minimum capacity to current capacity to prevent reduction
+    n.transformers['s_nom_min'] = n.transformers['s_nom']  # Set minimum capacity to current capacity to prevent reduction
+
     return n
 
 
