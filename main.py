@@ -95,7 +95,9 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_geo_non_va']:
         logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
-        n_agg_geo_non_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_non_va_aggregation'])
+        n_agg_geo_non_va = pypsa_model.copy()
+        n_agg_geo_non_va.transformers = n_agg_geo_non_va.transformers.iloc[0:0]
+        n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'])
 
         n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
