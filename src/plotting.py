@@ -73,6 +73,54 @@ def get_line_colors_under_construction(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
+def get_line_colors_by_congestion(n: pypsa.Network) -> pd.Series:
+    """
+    Calculates line colors based on whether the power flow in a line is at or near its maximum capacity.
+
+    Args:
+        n (pypsa.Network): The PyPSA network.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding colors as values.
+                   Returns an empty Series if an error occurs.
+    """
+    try:
+        line_colors = pd.Series('black', index=n.lines.index, dtype=str)  # Default to black
+
+        if n.lines_t.p0.empty:
+            logging.warning("No time-dependent line data (n.lines_t.p0) found. All lines will be black.")
+            return line_colors
+
+        # Filter for lines that actually have power flow data
+        lines_with_flow_data = n.lines.index.intersection(n.lines_t.p0.columns)
+        if lines_with_flow_data.empty:
+            logging.warning("No power flow data found for any line in n.lines_t.p0. All lines will be black.")
+            return line_colors
+
+        # Select relevant parts of the network components
+        relevant_lines = n.lines.loc[lines_with_flow_data]
+        relevant_p0 = n.lines_t.p0[lines_with_flow_data]
+
+        # Calculate the absolute maximum allowed apparent power for each relevant line
+        # s_max = s_nom * s_max_pu. Default s_max_pu to 1.0 if not present.
+        s_max_abs = relevant_lines['s_nom'] * relevant_lines.get('s_max_pu', 1.0)
+
+        # Calculate maximum absolute flow over all timesteps for each line
+        max_abs_flow_per_line = relevant_p0.abs().max(axis=0)
+
+        # Determine which lines are congested (flow >= 95% of max_s)
+        congested_lines_mask = (max_abs_flow_per_line >= 0.95 * s_max_abs)
+
+        # Update colors for congested lines
+        line_colors.loc[congested_lines_mask[congested_lines_mask].index] = 'red'
+
+        return line_colors
+
+    except Exception as e:
+        logging.error(f"Error calculating line colors by congestion: {e}")
+        return pd.Series(dtype=str)
+
+
 def plot_network(n: pypsa.Network, output_file: str):
     """
     Generates a static geographical plot of the PyPSA network and saves it as an SVG file.
