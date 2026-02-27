@@ -26,6 +26,7 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     # n.lines["s_nom_extendable"] = config['optimization_options']['include_line_expansion']
 
     n.lines['under_construction'] = False  # set all lines to not under construction by default
+    n.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
     if config['optimization_options']['include_line_expansion']:
         n.lines.loc[n.lines['under_construction'] == 1, 's_nom_extendable'] = True
