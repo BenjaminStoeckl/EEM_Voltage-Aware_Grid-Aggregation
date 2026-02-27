@@ -3,6 +3,7 @@ Module for loading and preparing the initial PyPSA network data.
 """
 import os
 
+import numpy as np
 import pandas as pd
 import pypsa
 
@@ -62,6 +63,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
 
     # Add estimated transformer data
     n = _add_estimated_transformer_data(n)
+
+    # Define line capacities for lines with s_nom = 0
+    n = _define_line_capacities(n)
 
     n = _add_network_expansion_costs(n, config['network_expansion_costs'])
 
@@ -199,5 +203,39 @@ def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
 
         # Clear type to ensure x is used instead of standard type parameters
         n.transformers.at[idx, 'type'] = ""
+
+    return n
+
+
+def _define_line_capacities(n: pypsa.Network) -> pypsa.Network:
+    """
+    Defines s_nom for lines where s_nom is 0, based on their type and num_parallel.
+    Calculation: s_nom = sqrt(3) * v_nom * i_nom * num_parallel
+
+    Args:
+        n (pypsa.Network): The PyPSA network to update.
+
+    Returns:
+        pypsa.Network: The updated PyPSA network.
+    """
+
+    # Find lines with s_nom == 0 and a valid type
+    mask = (n.lines.s_nom == 0) & (n.lines.type != "")
+
+    if mask.any():
+        # Map i_nom from line_types
+        i_nom = n.lines.loc[mask, 'type'].map(n.line_types.i_nom)
+
+        # Only update where i_nom was found
+        update_mask = mask & i_nom.notna()
+
+        if update_mask.any():
+            # s_nom [MVA] = sqrt(3) * v_nom [kV] * i_nom [kA] * num_parallel
+            n.lines.loc[update_mask, 's_nom'] = (
+                np.sqrt(3) *
+                n.lines.loc[update_mask, 'v_nom'] *
+                i_nom.loc[update_mask] *
+                n.lines.loc[update_mask, 'num_parallel']
+            )
 
     return n
