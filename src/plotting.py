@@ -8,6 +8,7 @@ and visualizations incorporating simulation results.
 
 import logging
 import os
+from typing import Callable
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
@@ -45,6 +46,33 @@ def get_line_colors_by_voltage(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
+def get_line_colors_under_construction(n: pypsa.Network) -> pd.Series:
+    """
+    Calculates line colors based on whether the line is under construction.
+
+    Args:
+        n (pypsa.Network): The PyPSA network.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding colors as values.
+                   Returns an empty Series if an error occurs.
+    """
+    try:
+        line_colors_under_construction = pd.Series(index=n.lines.index, dtype=str)
+
+        for line_name, line in n.lines.iterrows():
+            if line.get('under_construction', False):  # Safely get attribute, default to False
+                line_colors_under_construction.loc[line_name] = 'red'
+            else:
+                line_colors_under_construction.loc[line_name] = 'black'
+
+        return line_colors_under_construction
+
+    except Exception as e:
+        logging.error(f"Error calculating line colors by construction status: {e}")
+        return pd.Series(dtype=str)
+
+
 def plot_network(n: pypsa.Network, output_file: str):
     """
     Generates a static geographical plot of the PyPSA network and saves it as an SVG file.
@@ -57,16 +85,6 @@ def plot_network(n: pypsa.Network, output_file: str):
         n (pypsa.Network): The PyPSA network to plot.
         output_file (str): The base directory path where the plot HTML file
                            will be saved within a subdirectory named after the network.
-    """
-    """
-    Generates an interactive plot of the network using geopandas and plotly,
-    and saves it to an HTML file.
-
-    Requires the 'geopandas' and 'plotly' libraries.
-
-    Args:
-        n (pypsa.Network): The PyPSA network to plot.
-        output_file (str): Path to save the output plot HTML file.
     """
     try:
         logging.info(f"Generating static plot and saving to {output_file}...")
@@ -85,30 +103,21 @@ def plot_network(n: pypsa.Network, output_file: str):
         logging.error(f"{e}")
 
 
-def plot_network_interactive(n: pypsa.Network, output_file: str):
+def plot_network_interactive(n: pypsa.Network, output_file: str, line_color_func: Callable = get_line_colors_by_voltage):
     """
     Generates an interactive geographical plot of the PyPSA network using `n.explore()`
     and saves it to an HTML file.
 
-    This function visualizes the network with lines colored by voltage level
-    (using `get_line_colors_by_voltage`), includes transformer width, and tooltips
-    for interactive inspection. The plot is saved within a subdirectory named
-    after the network inside the specified `output_file` path.
+    This function can visualize the network with different line colorings by passing
+    a coloring function to `line_color_func`. By default, it colors lines by voltage level.
 
     Args:
         n (pypsa.Network): The PyPSA network to plot.
         output_file (str): The base directory path where the plot HTML file
                            will be saved within a subdirectory named after the network.
-    """
-    """
-    Generates an interactive plot of the network using geopandas and plotly,
-    and saves it to an HTML file.
-
-    Requires the 'geopandas' and 'plotly' libraries.
-
-    Args:
-        n (pypsa.Network): The PyPSA network to plot.
-        output_file (str): Path to save the output plot HTML file.
+        line_color_func (Callable): A function that takes a PyPSA network and returns a
+                                    pandas Series of line colors. Defaults to
+                                    `get_line_colors_by_voltage`.
     """
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
@@ -116,7 +125,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str):
         # Ensure the directory exists
         os.makedirs(os.path.join(output_file, n.name), exist_ok=True)
 
-        map = n.explore(line_color=get_line_colors_by_voltage(n),
+        map = n.explore(line_color=line_color_func(n),
                         transformer_width=3,
                         tooltip=True,
                         jitter=0.05, )
@@ -142,8 +151,8 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
 
-        line_flow = n.lines_t.p0.sum(axis=0)
-        link_flow = n.links_t.p0.sum(axis=0)
+        line_flow = n.lines_t.p0.sum(axis=0)/8760
+        link_flow = n.links_t.p0.sum(axis=0)/8760
 
         map = n.explore(
             # bus_size=eb,

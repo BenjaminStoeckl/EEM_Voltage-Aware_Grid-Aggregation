@@ -62,6 +62,7 @@ def main():
 
     # Save the base model state
     pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
+    plotting.plot_network_interactive(pypsa_model, config['results_path'])
 
     # -------------------------------------------------------------------------
     # 5. Full Model Baseline Execution
@@ -75,7 +76,7 @@ def main():
         full_pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', full_pypsa_model.name + '.nc'))
         pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
 
-    plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
+        plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
 
     # -------------------------------------------------------------------------
     # 6. Grid Aggregation: NPAP - VA Aggregation
