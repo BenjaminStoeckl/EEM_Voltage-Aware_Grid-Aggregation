@@ -4,7 +4,53 @@ Module for configuring and running the PyPSA optimization models.
 import os
 from typing import Dict
 
+import numpy as np
+import pandas as pd
 import pypsa
+
+
+def set_congested_lines_extendable(n: pypsa.Network) -> pypsa.Network:
+    """
+    Identifies congested lines and sets them as extendable.
+
+    A line is considered congested if its power flow at any timestep
+    is at or near its maximum capacity (>= 95% of s_max).
+
+    Args:
+        n (pypsa.Network): The PyPSA network, expected to contain power flow results.
+
+    Returns:
+        pypsa.Network: The updated PyPSA network with 's_nom_extendable' set for congested lines.
+    """
+    if n.lines_t.p0.empty:
+        print("Warning: No time-dependent line data (n.lines_t.p0) found. Cannot determine congestion.")
+        n.lines['s_nom_extendable'] = False  # Ensure it's set to False
+        return n
+
+    lines_with_flow_data = n.lines.index.intersection(n.lines_t.p0.columns)
+    if lines_with_flow_data.empty:
+        print("Warning: No power flow data found for any line in n.lines_t.p0. No lines will be set as extendable.")
+        n.lines['s_nom_extendable'] = False  # Ensure it's set to False
+        return n
+
+    relevant_lines = n.lines.loc[lines_with_flow_data]
+    relevant_p0 = n.lines_t.p0[lines_with_flow_data]
+
+    s_max_abs = relevant_lines['s_nom'] * relevant_lines.get('s_max_pu', 1.0)
+
+    max_abs_flow_per_line = relevant_p0.abs().max(axis=0)
+
+    congested_lines_mask = (max_abs_flow_per_line >= 0.95 * s_max_abs)
+
+    # Initialize all to not extendable
+    n.lines['s_nom_extendable'] = False
+
+    # Set extendable for congested lines
+    congested_lines_index = congested_lines_mask[congested_lines_mask].index
+    if not congested_lines_index.empty:
+        n.lines.loc[congested_lines_index, 's_nom_extendable'] = True
+
+    return n
 
 
 def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> pypsa.Network:
@@ -29,7 +75,8 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     n.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
     if config['optimization_options']['include_line_expansion']:
-        n.lines.loc[n.lines['under_construction'] == 1, 's_nom_extendable'] = True
+        # n = set_congested_lines_extendable(n)
+        n.lines['s_nom_extendable'] = True
         n.transformers['s_nom_extendable'] = True
     else:
         n.lines['s_nom_extendable'] = False
