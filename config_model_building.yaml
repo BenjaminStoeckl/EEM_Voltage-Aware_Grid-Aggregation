@@ -1,0 +1,77 @@
+# Always use double backslashes in Windows paths to avoid issues with escape characters.
+
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+#pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\WS-results"
+results_path: "C:\\BeSt\\VA-GA\\results"
+path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
+
+test_case: "elec.nc"
+
+preprocess_test_case: true
+aggregate_stub_lines: true
+temporal_aggregation: true
+run_full_model: true
+aggregate_geo_va: false
+aggregate_geo_non_va: false
+
+solver_options: {
+                  LogToConsole: 0,
+                  ResultFile: 'infeasibility.ilp',
+                  Method: 2,  # -1, standard solving approach, 2 barrier only
+                  Crossover: 0,  # 0 no crossover
+}
+
+optimization_options:
+  include_line_expansion: false  # sets all lines 'under_construction' to expandable
+
+network_expansion_costs:
+  line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
+  line_expansion_cost_380: 10.72 # in Eur/MVA/km/a
+  trafo_expansion_cost_380-220: 136.78 # in Eur/MVA/a
+
+geo_va_aggregation:
+  num_of_clusters: 500
+  strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+
+  line_strategies:
+    x: "equivalent_reactance"
+    r: "equivalent_reactance"
+    s_nom: "sum"
+    length: "average"
+    capital_cost: "average"
+    s_max_pu: "sum"
+    num_parallel: "sum"
+    v_nom: "average"
+    carrier: "first"
+
+geo_non_va_aggregation:
+  num_of_clusters: 500
+  strategy: 'geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+
+  line_strategies:
+    x: "equivalent_reactance"
+    r: "equivalent_reactance"
+    s_nom: "sum"
+    length: "average"
+    capital_cost: "average"
+    s_max_pu: "sum"
+    num_parallel: "sum"
+    v_nom: "average"
+
+temporal_clustering:
+  clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
+  n_timestep_clusters: 3
+
+# Options for the native PyPSA aggregation strategy.
+# We can specify clustering strategies for buses and lines.
+# Using k-means on coordinates for buses is a geographical approach.
+aggregation_options:
+  bus_strategies:
+    "1": "kmeans"
+  line_strategies:
+    "1": "length_capacity_weighted_average"
+  generator_strategies:
+    "1": "sum"
+  storage_unit_strategies:
+    "1": "sum"
+

@@ -62,7 +62,7 @@ def main():
 
     # Save the base model state
     pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
-    plotting.plot_network_interactive(pypsa_model, config['results_path'])
+    plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_congestion)
 
     # -------------------------------------------------------------------------
     # 5. Full Model Baseline Execution
