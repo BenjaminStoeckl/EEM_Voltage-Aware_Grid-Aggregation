@@ -3,6 +3,7 @@ Module for loading and preparing the initial PyPSA network data.
 """
 import os
 
+import pandas as pd
 import pypsa
 
 
@@ -58,6 +59,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
 
     # Set num_parallel of lines to a minimum of 1, if the line is active, to avoid infinite impedance
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
+
+    # Add estimated transformer data
+    n = _add_estimated_transformer_data(n)
 
     n = _add_network_expansion_costs(n, config['network_expansion_costs'])
 
@@ -128,5 +132,72 @@ def _add_network_expansion_costs(n: pypsa.Network, expansion_cost: dict) -> pyps
     if 'trafo_expansion_cost_380-220' in expansion_cost:
         if expansion_cost['trafo_expansion_cost_380-220'] is not None:
             n.transformers['capital_cost'] = expansion_cost['trafo_expansion_cost_380-220']
+
+    return n
+
+
+def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
+    """
+    Adds estimated transformer data from a CSV file to the network.
+    The data is matched based on 'bus0' and 'bus1' columns.
+    Assigns 's_nom_estimated' to 's_nom' and 'reactance_x_estimated' to 'x' (after conversion to pu).
+    Sets 'num_parallel' based on 'n_parallel', with a minimum of 1.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to which estimated transformer data will be added.
+
+    Returns:
+        pypsa.Network: The updated PyPSA network.
+    """
+
+    file_path = os.path.join("data", "transformers_estimated.csv")
+    if not os.path.exists(file_path):
+        print(f"Warning: {file_path} not found. Skipping estimated transformer data.")
+        return n
+
+    df_est = pd.read_csv(file_path, sep=',', decimal='.')
+
+    # Ensure bus labels are strings to match PyPSA
+    df_est['bus0'] = df_est['bus0'].astype(str)
+    df_est['bus1'] = df_est['bus1'].astype(str)
+
+    # Set multi-index for matching
+    df_est = df_est.set_index(['bus0', 'bus1'])
+
+    # Iterate and update transformers in n
+    for idx, trafo in n.transformers.iterrows():
+        b0, b1 = trafo.bus0, trafo.bus1
+
+        # Try direct match
+        if (b0, b1) in df_est.index:
+            row = df_est.loc[(b0, b1)]
+        # Try swapped match
+        elif (b1, b0) in df_est.index:
+            row = df_est.loc[(b1, b0)]
+        else:
+            continue
+
+        # If multiple matches, take the first one
+        if isinstance(row, pd.DataFrame):
+            row = row.iloc[0]
+
+        s_nom = row['s_nom_estimated']
+        x_ohm = row['reactance_x_estimated']
+
+        # Skip if estimated values are zero to avoid division by zero or invalid parameters
+        if s_nom <= 0 or x_ohm <= 0:
+            continue
+
+        v_nom = max(row['voltage_bus0'], row['voltage_bus1'])  # Assumption: reactance (ohm) belongs to high voltage side (industry standard)
+
+        # Convert to pu: x_pu = x_ohm * s_nom / v_nom^2
+        x_pu = x_ohm * s_nom / (v_nom ** 2)
+
+        n.transformers.at[idx, 's_nom'] = s_nom
+        n.transformers.at[idx, 'x'] = x_pu
+        n.transformers.at[idx, 'num_parallel'] = max(1, row['n_parallel'])
+
+        # Clear type to ensure x is used instead of standard type parameters
+        n.transformers.at[idx, 'type'] = ""
 
     return n
