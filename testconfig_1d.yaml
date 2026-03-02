@@ -11,11 +11,11 @@ aggregate_stub_lines: true
 temporal_aggregation: true
 run_full_model_base: true
 
-run_full_model_grid_expansion: true
-aggregate_geo_va: true
-aggregate_geo_non_va: true
-aggregate_elec_va: true
-aggregate_elec_non_va: true
+run_full_model_grid_expansion: 'presolved' # Options: true, false, 'presolved'
+aggregate_geo_va: 'presolved' # Options: true, false, 'presolved'
+aggregate_geo_non_va: 'presolved' # Options: true, false, 'presolved'
+aggregate_elec_va: 'presolved' # Options: true, false, 'presolved
+aggregate_elec_non_va: 'presolved' # Options: true, false, 'presolved'
 
 solver_options: {
                   LogToConsole: 0,

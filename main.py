@@ -86,71 +86,102 @@ def main():
     # -------------------------------------------------------------------------
     # 5. Full Model Grid Expansion Execution
     # -------------------------------------------------------------------------
-    if config['run_full_model_grid_expansion']:
-        logging.info("Running grid expansion planning for the full (unaggregated) model.")
-        n_full_grid_expansion = pypsa_model.copy()
-        n_full_grid_expansion.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
-        n_full_grid_expansion = model_runner.run_expansion_planning(n_full_grid_expansion, "full_model_grid_exp", config)
+    if config['run_full_model_grid_expansion'] == 'false':
+        logging.info("Skipping full model grid expansion as per configuration.")
+    else:
+        match config['run_full_model_grid_expansion']:
+            case 'true':
+                logging.info("Running grid expansion planning for the full (unaggregated) model.")
+                n_full_grid_expansion = pypsa_model.copy()
+                n_full_grid_expansion.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
+                n_full_grid_expansion = model_runner.run_expansion_planning(n_full_grid_expansion, "full_model_grid_exp", config)
+
+                # Identify congested lines and set them as extendable for the following aggregation steps
+                n_full_grid_expansion = data_handling.set_congested_lines_extendable(n_full_grid_expansion)
+
+                n_full_grid_expansion.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_full_grid_expansion.name + '.nc'))
+                plotting.plot_network_with_results_interactive(n_full_grid_expansion, config['results_path'])
+
+            case 'presolved':
+                n_full_grid_expansion = data_handling.load_network(config, 'full_model_grid_exp_solved.nc')
 
         model_analyzer.analyze_network_results([n_full_grid_expansion])
-
-        # Identify congested lines and set them as extendable for the following aggregation steps
-        n_full_grid_expansion = data_handling.set_congested_lines_extendable(n_full_grid_expansion)
-
-        n_full_grid_expansion.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_full_grid_expansion.name + '.nc'))
-        plotting.plot_network_with_results_interactive(n_full_grid_expansion, config['results_path'])
 
     # -------------------------------------------------------------------------
     # 6. Grid Aggregation: NPAP - VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_geo_va']:
-        logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-        n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
+    if config['aggregate_geo_va'] == 'false':
+        logging.info("Skipping geographical, voltage-aware aggregation as per configuration.")
+    else:
+        match config['aggregate_geo_va']:
+            case 'true':
+                logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
+                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
 
-        n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
+                n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
 
-        n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
+                plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+            case 'presolved':
+                n_agg_geo_va = data_handling.load_network(config, 'model_geo_va_agg_solved.nc')
 
     # -------------------------------------------------------------------------
     # 7. Grid Aggregation: NPAP - non VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_geo_non_va']:
-        logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
-        n_agg_geo_non_va = pypsa_model.copy()
+    if config['aggregate_geo_non_va'] == 'false':
+        logging.info("Skipping geographical, non-voltage-aware aggregation as per configuration.")
+    else:
+        match config['aggregate_geo_non_va']:
+            case 'true':
+                logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
+                n_agg_geo_non_va = pypsa_model.copy()
 
-        n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'], line_strategies=config['line_strategies'])
 
-        n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
+                n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
-        n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
+                plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+            case 'presolved':
+                n_agg_geo_non_va = data_handling.load_network(config, 'model_geo_non_va_agg_solved.nc')
 
     # -------------------------------------------------------------------------
     # 9. Grid Aggregation: NPAP - VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_elec_va']:
-        logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
-        n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'], line_strategies=config['line_strategies'])
+    if config['aggregate_elec_va'] == 'false':
+        logging.info("Skipping electrical, voltage-aware aggregation as per configuration.")
+    else:
+        match config['aggregate_elec_va']:
+            case 'true':
+                logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
+                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'], line_strategies=config['line_strategies'])
 
-        n_agg_elec_va = model_runner.run_expansion_planning(n_agg_elec_va, 'model_elec_va_agg', config)
+                n_agg_elec_va = model_runner.run_expansion_planning(n_agg_elec_va, 'model_elec_va_agg', config)
 
-        n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
+                plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+            case 'presolved':
+                n_agg_elec_va = data_handling.load_network(config, 'model_elec_va_agg_solved.nc')
 
     # -------------------------------------------------------------------------
     # 10. Grid Aggregation: NPAP - non VA Aggregation
     # -------------------------------------------------------------------------
-    if config['aggregate_elec_non_va']:
-        logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
-        n_agg_elec_non_va = pypsa_model.copy()
+    if config['aggregate_elec_non_va'] == 'false':
+        logging.info("Skipping electrical, non-voltage-aware aggregation as per configuration.")
+    else:
+        match config['aggregate_elec_non_va']:
+            case 'true':
+                logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
+                n_agg_elec_non_va = pypsa_model.copy()
 
-        n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'], line_strategies=config['line_strategies'])
 
-        n_agg_elec_non_va = model_runner.run_expansion_planning(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
+                n_agg_elec_non_va = model_runner.run_expansion_planning(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
-        n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
+                plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+            case 'presolved':
+                n_agg_elec_non_va = data_handling.load_network(config, 'model_elec_non_va_agg_solved.nc')
 
     # -------------------------------------------------------------------------
     # 11. Results Analysis & Comparison
