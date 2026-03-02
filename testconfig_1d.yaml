@@ -9,7 +9,9 @@ test_case: "elec.nc"
 preprocess_test_case: true
 aggregate_stub_lines: true
 temporal_aggregation: true
-run_full_model: true
+run_full_model_base: true
+
+run_full_model_grid_expansion: true
 aggregate_geo_va: true
 aggregate_geo_non_va: true
 aggregate_elec_va: true

@@ -307,3 +307,22 @@ def set_congested_lines_extendable(n: pypsa.Network, threshold: float = 0.95) ->
         logging.info("No power flow results found for transformers.")
 
     return n
+
+
+def set_expandet_generatioin_as_default(n: pypsa.Network) -> pypsa.Network:
+    """
+    Sets p_nom to p_nom_opt for all generators to finalize the generation expansion results.
+
+    Args:
+        n (pypsa.Network): The PyPSA network with optimization results.
+
+    Returns:
+        pypsa.Network: The network with updated p_nom for generators.
+    """
+    if 'p_nom_opt' in n.generators.columns:
+        n.generators['p_nom'] = n.generators['p_nom_opt']
+        logging.info("Finalized generator expansion: Set p_nom to p_nom_opt.")
+    else:
+        logging.warning("p_nom_opt not found in generators. p_nom was not updated.")
+
+    return n

@@ -53,7 +53,7 @@ def set_congested_lines_extendable(n: pypsa.Network) -> pypsa.Network:
     return n
 
 
-def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> pypsa.Network:
+def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict, activate_line_expansion: bool = True) -> pypsa.Network:
     """
     Configures and solves the network expansion planning problem.
 
@@ -64,14 +64,14 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
 
     Returns:
         str: The path to the solved network file.
+        :param activate_line_expansion: Whether to activate line expansion based on the configuration. This allows for flexibility in testing different scenarios without modifying the main configuration file.
     """
     results_dir = os.path.join(config['results_path'], model_name)
     os.makedirs(results_dir, exist_ok=True)
 
     n.lines['under_construction'] = False  # set all lines to not under construction by default
-    n.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
-    if config['optimization_options']['include_line_expansion']:
+    if config['optimization_options']['include_line_expansion'] and activate_line_expansion:
         match config['optimization_options']['define_expandable_lines']:
             case 'all':
                 n.lines['s_nom_extendable'] = True
@@ -84,8 +84,6 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     else:
         n.lines['s_nom_extendable'] = False
         n.transformers['s_nom_extendable'] = False
-
-    # n.generators["p_nom_extendable"] = True
 
     print(f"Running optimization for '{model_name}'...")
 
