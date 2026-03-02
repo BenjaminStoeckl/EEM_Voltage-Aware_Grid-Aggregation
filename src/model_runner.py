@@ -78,6 +78,9 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
                 n.transformers['s_nom_extendable'] = True
             case 'all_congested_lines':
                 n = set_congested_lines_extendable(n)
+            case 'predefined':
+                # don't change the existing 's_nom_extendable' values in the network, just ensure that transformers are consistent
+                n.transformers['s_nom_extendable'] = True
     else:
         n.lines['s_nom_extendable'] = False
         n.transformers['s_nom_extendable'] = False

@@ -73,6 +73,30 @@ def get_line_colors_under_construction(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
+def get_line_colors_by_extendable(n: pypsa.Network) -> pd.Series:
+    """
+    Calculates line colors based on whether the line is extendable (s_nom_extendable).
+
+    Args:
+        n (pypsa.Network): The PyPSA network.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding colors as values.
+                   Returns an empty Series if an error occurs.
+    """
+    try:
+        line_colors = pd.Series('black', index=n.lines.index, dtype=str)
+
+        if 's_nom_extendable' in n.lines.columns:
+            line_colors.loc[n.lines['s_nom_extendable']] = 'red'
+
+        return line_colors
+
+    except Exception as e:
+        logging.error(f"Error calculating line colors by extendable status: {e}")
+        return pd.Series(dtype=str)
+
+
 def get_line_colors_by_congestion(n: pypsa.Network) -> pd.Series:
     """
     Calculates line colors based on whether the power flow in a line is at or near its maximum capacity.

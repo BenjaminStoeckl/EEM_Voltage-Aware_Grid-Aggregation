@@ -62,7 +62,7 @@ def main():
 
     # Save the base model state
     pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
-    plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_congestion)
+    plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 5. Full Model Baseline Execution
@@ -91,7 +91,7 @@ def main():
         n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
 
         n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_geo_va, config['results_path'])
+        plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 7. Grid Aggregation: NPAP - non VA Aggregation
@@ -105,7 +105,7 @@ def main():
         n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
         n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'])
+        plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 8. Grid Aggregation: NPAP - VA Aggregation
@@ -117,7 +117,7 @@ def main():
         n_agg_elec_va = model_runner.run_expansion_planning(n_agg_elec_va, 'model_elec_va_agg', config)
 
         n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_elec_va, config['results_path'])
+        plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 7. Grid Aggregation: NPAP - non VA Aggregation
@@ -131,7 +131,7 @@ def main():
         n_agg_elec_non_va = model_runner.run_expansion_planning(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
         n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
-        plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'])
+        plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 8. Results Analysis & Comparison
