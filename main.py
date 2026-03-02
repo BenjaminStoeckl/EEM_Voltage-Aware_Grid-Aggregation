@@ -73,6 +73,9 @@ def main():
 
         model_analyzer.analyze_network_results([full_pypsa_model])
 
+        # Identify congested lines and set them as extendable for the following aggregation steps
+        full_pypsa_model = data_handling.set_congested_lines_extendable(full_pypsa_model)
+
         full_pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', full_pypsa_model.name + '.nc'))
         pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
 

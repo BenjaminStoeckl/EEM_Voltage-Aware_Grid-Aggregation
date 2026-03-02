@@ -2,7 +2,6 @@
 Placeholder module for the custom voltage-aware grid aggregation method.
 """
 import pypsa
-from typing import Dict
 from pypsa.clustering.npap import npap_clustering
 from pypsa.clustering.spatial import DEFAULT_ONE_PORT_STRATEGIES
 
@@ -34,7 +33,6 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
         "spill": "sum",
     }
 
-
     result = npap_clustering(
         n,
         n_clusters=va_aggregation_config['num_of_clusters'],
@@ -46,9 +44,15 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
     )
 
     network = result.n
+
+    # Map s_nom_extendable from original network to aggregated network
+    if 's_nom_extendable' in n.lines.columns:
+        # Aggregated line is extendable if any original line in the cluster was extendable
+        extendable_any = n.lines.s_nom_extendable.groupby(result.linemap).any()
+        network.lines['s_nom_extendable'] = False
+        network.lines.loc[extendable_any.index, 's_nom_extendable'] = extendable_any
+
     network.name = 'model_agg_npap'
-    # network.lines['under_construction'] = 0  # Ensure no lines are marked as under construction after aggregation
     network.sanitize()
 
     return network
-

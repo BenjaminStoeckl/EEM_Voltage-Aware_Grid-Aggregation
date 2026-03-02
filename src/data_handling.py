@@ -1,6 +1,7 @@
 """
 Module for loading and preparing the initial PyPSA network data.
 """
+import logging
 import os
 
 import numpy as np
@@ -237,5 +238,72 @@ def _define_line_capacities(n: pypsa.Network) -> pypsa.Network:
                 i_nom.loc[update_mask] *
                 n.lines.loc[update_mask, 'num_parallel']
             )
+
+    return n
+
+
+def set_congested_lines_extendable(n: pypsa.Network, threshold: float = 0.95) -> pypsa.Network:
+    """
+    Identifies congested lines and transformers in the network based on power flow
+    results and sets the 's_nom_extendable' attribute to True for those components.
+
+    A component is considered congested if its maximum absolute power flow across all
+    snapshots is greater than or equal to the specified threshold of its nominal
+    capacity (s_nom).
+
+    Args:
+        n (pypsa.Network): The PyPSA network with results.
+        threshold (float): The loading threshold to consider a component congested.
+                          Defaults to 0.95.
+
+    Returns:
+        pypsa.Network: The network with updated 's_nom_extendable' for lines and transformers.
+    """
+    # 1. Handle Lines
+    if not n.lines_t.p0.empty:
+        # Loading = max(|flow|) / (s_nom * s_max_pu)
+        s_max_pu = n.lines.get('s_max_pu', 1.0)
+        s_nom = n.lines.s_nom
+
+        # Ensure we only check lines that have flow data
+        lines_with_results = n.lines.index.intersection(n.lines_t.p0.columns)
+        if not lines_with_results.empty:
+            max_flow = n.lines_t.p0[lines_with_results].abs().max()
+            capacity = (s_nom * s_max_pu).loc[lines_with_results]
+
+            # Avoid division by zero
+            loading = max_flow / capacity.replace(0, np.inf)
+
+            congested_lines = loading[loading >= threshold].index
+
+            logging.info(f"Identified {len(congested_lines)} congested lines (loading >= {threshold}).")
+
+            n.lines['s_nom_extendable'] = False
+            if not congested_lines.empty:
+                n.lines.loc[congested_lines, 's_nom_extendable'] = True
+    else:
+        logging.warning("No power flow results found for lines. Cannot identify congested lines.")
+
+    # 2. Handle Transformers
+    if not n.transformers_t.p0.empty:
+        s_max_pu_trafo = n.transformers.get('s_max_pu', 1.0)
+        s_nom_trafo = n.transformers.s_nom
+
+        trafos_with_results = n.transformers.index.intersection(n.transformers_t.p0.columns)
+        if not trafos_with_results.empty:
+            max_flow_trafo = n.transformers_t.p0[trafos_with_results].abs().max()
+            capacity_trafo = (s_nom_trafo * s_max_pu_trafo).loc[trafos_with_results]
+
+            loading_trafo = max_flow_trafo / capacity_trafo.replace(0, np.inf)
+
+            congested_trafos = loading_trafo[loading_trafo >= threshold].index
+
+            logging.info(f"Identified {len(congested_trafos)} congested transformers (loading >= {threshold}).")
+
+            n.transformers['s_nom_extendable'] = False
+            if not congested_trafos.empty:
+                n.transformers.loc[congested_trafos, 's_nom_extendable'] = True
+    else:
+        logging.info("No power flow results found for transformers.")
 
     return n
