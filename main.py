@@ -83,7 +83,7 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_geo_va']:
         logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-        n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'])
+        n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
 
         n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
 
@@ -95,9 +95,11 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_geo_non_va']:
         logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
+        # drop transformers before aggregation
         n_agg_geo_non_va = pypsa_model.copy()
         n_agg_geo_non_va.transformers = n_agg_geo_non_va.transformers.iloc[0:0]
-        n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'])
+
+        n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'], line_strategies=config['line_strategies'])
 
         n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
@@ -105,14 +107,44 @@ def main():
         plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'])
 
     # -------------------------------------------------------------------------
+    # 8. Grid Aggregation: NPAP - VA Aggregation
+    # -------------------------------------------------------------------------
+    if config['aggregate_elec_va']:
+        logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
+        n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'], line_strategies=config['line_strategies'])
+
+        n_agg_elec_va = model_runner.run_expansion_planning(n_agg_elec_va, 'model_elec_va_agg', config)
+
+        n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
+        plotting.plot_network_interactive(n_agg_elec_va, config['results_path'])
+
+    # -------------------------------------------------------------------------
+    # 7. Grid Aggregation: NPAP - non VA Aggregation
+    # -------------------------------------------------------------------------
+    if config['aggregate_elec_non_va']:
+        logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
+        # drop transformers before aggregation
+        n_agg_elec_non_va = pypsa_model.copy()
+        n_agg_elec_non_va.transformers = n_agg_elec_non_va.transformers.iloc[0:0]
+
+        n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'], line_strategies=config['line_strategies'])
+
+        n_agg_elec_non_va = model_runner.run_expansion_planning(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
+
+        n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
+        plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'])
+
+    # -------------------------------------------------------------------------
     # 8. Results Analysis & Comparison
     # -------------------------------------------------------------------------
     logging.info("Comparing results between the full model and aggregated versions.")
     model_analyzer.analyze_active_slack_nodes(pypsa_model)
-    if config['aggregate_geo_va'] and config['aggregate_geo_non_va']:
+    if config['aggregate_geo_va'] and config['aggregate_geo_non_va'] and config['aggregate_elec_va'] and config['aggregate_elec_non_va']:
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_non_va)
-        model_analyzer.analyze_network_results([pypsa_model, n_agg_geo_va, n_agg_geo_non_va])
+        model_analyzer.analyze_active_slack_nodes(n_agg_elec_va)
+        model_analyzer.analyze_active_slack_nodes(n_agg_elec_non_va)
+        model_analyzer.analyze_network_results([pypsa_model, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
 
     logging.info("Workflow completed.")
 

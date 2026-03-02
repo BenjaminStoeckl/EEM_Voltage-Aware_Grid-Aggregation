@@ -12,6 +12,8 @@ temporal_aggregation: true
 run_full_model: true
 aggregate_geo_va: true
 aggregate_geo_non_va: true
+aggregate_elec_va: true
+aggregate_elec_non_va: true
 
 solver_options: {
                   LogToConsole: 0,
@@ -21,7 +23,7 @@ solver_options: {
 }
 
 optimization_options:
-  include_line_expansion: true  # sets all lines 'under_construction' to expandable
+  include_line_expansion: true  # sets all lines dependent on 'define_expandable_line' to expandable
   define_expandable_lines: 'all_congested_lines' # Options: 'all_congested_lines', 'all'
 
 network_expansion_costs:
@@ -33,30 +35,28 @@ geo_va_aggregation:
   num_of_clusters: 200
   strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
 
-  line_strategies:
-    x: "equivalent_reactance"
-    r: "equivalent_reactance"
-    s_nom: "sum"
-    length: "average"
-    capital_cost: "average"
-    s_max_pu: "sum"
-    num_parallel: "sum"
-    v_nom: "average"
-    carrier: "first"
-
 geo_non_va_aggregation:
   num_of_clusters: 200
   strategy: 'geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
 
-  line_strategies:
-    x: "equivalent_reactance"
-    r: "equivalent_reactance"
-    s_nom: "sum"
-    length: "average"
-    capital_cost: "average"
-    s_max_pu: "sum"
-    num_parallel: "sum"
-    v_nom: "average"
+elec_va_aggregation:
+  num_of_clusters: 200
+  strategy: 'va_electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
+
+elec_non_va_aggregation:
+  num_of_clusters: 200
+  strategy: 'electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
+
+line_strategies:
+  x: "equivalent_reactance"
+  r: "equivalent_reactance"
+  s_nom: "sum"
+  length: "average"
+  capital_cost: "average"
+  s_max_pu: "sum"
+  num_parallel: "sum"
+  v_nom: "average"
+
 
 temporal_clustering:
   clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
