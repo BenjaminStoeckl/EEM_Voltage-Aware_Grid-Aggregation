@@ -68,9 +68,6 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     results_dir = os.path.join(config['results_path'], model_name)
     os.makedirs(results_dir, exist_ok=True)
 
-    # Configure the network for expansion planning
-    # n.lines["s_nom_extendable"] = config['optimization_options']['include_line_expansion']
-
     n.lines['under_construction'] = False  # set all lines to not under construction by default
     n.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
@@ -89,7 +86,6 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
 
     print(f"Running optimization for '{model_name}'...")
 
-    # A simple solve, replace with a proper optimization call
     try:
         path_temp_files = os.path.join(config['path_for_temporary_files'], 'pypsa_model.lp')
         n.optimize(solver_name="gurobi",

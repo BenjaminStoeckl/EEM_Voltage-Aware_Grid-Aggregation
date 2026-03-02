@@ -95,9 +95,7 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_geo_non_va']:
         logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
-        # drop transformers before aggregation
         n_agg_geo_non_va = pypsa_model.copy()
-        n_agg_geo_non_va.transformers = n_agg_geo_non_va.transformers.iloc[0:0]
 
         n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'], line_strategies=config['line_strategies'])
 
@@ -123,9 +121,7 @@ def main():
     # -------------------------------------------------------------------------
     if config['aggregate_elec_non_va']:
         logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
-        # drop transformers before aggregation
         n_agg_elec_non_va = pypsa_model.copy()
-        n_agg_elec_non_va.transformers = n_agg_elec_non_va.transformers.iloc[0:0]
 
         n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'], line_strategies=config['line_strategies'])
 
