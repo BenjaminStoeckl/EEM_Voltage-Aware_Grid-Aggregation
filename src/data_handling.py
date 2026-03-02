@@ -309,7 +309,7 @@ def set_congested_lines_extendable(n: pypsa.Network, threshold: float = 0.95) ->
     return n
 
 
-def set_expandet_generatioin_as_default(n: pypsa.Network) -> pypsa.Network:
+def set_expanded_generation_as_default(n: pypsa.Network) -> pypsa.Network:
     """
     Sets p_nom to p_nom_opt for all generators to finalize the generation expansion results.
 

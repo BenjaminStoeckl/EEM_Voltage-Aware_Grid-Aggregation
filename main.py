@@ -75,7 +75,7 @@ def main():
 
         # Identify congested lines and set them as extendable for the following aggregation steps
         pypsa_model = data_handling.set_congested_lines_extendable(pypsa_model)
-        pypsa_model = data_handling.set_expandet_generatioin_as_default(pypsa_model)
+        pypsa_model = data_handling.set_expanded_generation_as_default(pypsa_model)
 
         pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
         pypsa_model.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
