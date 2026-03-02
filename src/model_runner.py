@@ -75,9 +75,12 @@ def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict) -> p
     n.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
     if config['optimization_options']['include_line_expansion']:
-        # n = set_congested_lines_extendable(n)
-        n.lines['s_nom_extendable'] = True
-        n.transformers['s_nom_extendable'] = True
+        match config['optimization_options']['define_expandable_lines']:
+            case 'all':
+                n.lines['s_nom_extendable'] = True
+                n.transformers['s_nom_extendable'] = True
+            case 'all_congested_lines':
+                n = set_congested_lines_extendable(n)
     else:
         n.lines['s_nom_extendable'] = False
         n.transformers['s_nom_extendable'] = False
