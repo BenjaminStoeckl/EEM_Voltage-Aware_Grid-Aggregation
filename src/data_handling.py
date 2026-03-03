@@ -70,6 +70,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     # Define line capacities for lines with s_nom = 0
     n = _define_line_capacities(n)
 
+    # Set standard voltage levels (220/380 kV)
+    # n = _set_standard_voltages(n)
+
     n = _add_network_expansion_costs(n, config['network_expansion_costs'])
 
     n.lines['s_nom_min'] = n.lines['s_nom']  # Set minimum capacity to current capacity to prevent reduction
@@ -100,6 +103,30 @@ def export_network_and_results(n: pypsa.Network, config: dict, file_name: str = 
 
     file_path = os.path.join(output_folder, f"{file_name}.nc")
     n.export_to_netcdf(file_path)
+
+
+def _set_standard_voltages(n: pypsa.Network) -> pypsa.Network:
+    """
+    Sets the nominal voltage levels (v_nom) for buses and lines to standard
+    values of 220 kV or 380 kV based on a 300 kV threshold.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to update.
+
+    Returns:
+        pypsa.Network: The updated PyPSA network.
+    """
+    # Update buses
+    n.buses.loc[n.buses.v_nom < 300, 'v_nom'] = 220
+    n.buses.loc[n.buses.v_nom >= 300, 'v_nom'] = 380
+
+    # Update lines
+    n.lines.loc[n.lines.v_nom < 300, 'v_nom'] = 220
+    n.lines.loc[n.lines.v_nom >= 300, 'v_nom'] = 380
+
+    logging.info("Standardized voltage levels to 220 kV and 380 kV.")
+
+    return n
 
 
 def _add_network_expansion_costs(n: pypsa.Network, expansion_cost: dict) -> pypsa.Network:
