@@ -272,7 +272,7 @@ def _define_line_capacities(n: pypsa.Network) -> pypsa.Network:
     return n
 
 
-def set_congested_lines_extendable(n: pypsa.Network, threshold: float = 0.95) -> pypsa.Network:
+def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold: float = 0.8) -> pypsa.Network:
     """
     Identifies congested lines and transformers in the network based on power flow
     results and sets the 's_nom_extendable' attribute to True for those components.

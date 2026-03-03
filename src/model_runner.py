@@ -80,7 +80,8 @@ def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, acti
                 n = set_congested_lines_extendable(n)
             case 'predefined':
                 # don't change the existing 's_nom_extendable' values in the network, just ensure that transformers are consistent
-                n.transformers['s_nom_extendable'] = True
+                # n.transformers['s_nom_extendable'] = True
+                pass
     else:
         n.lines['s_nom_extendable'] = False
         n.transformers['s_nom_extendable'] = False

@@ -25,8 +25,8 @@ solver_options: {
 }
 
 optimization_options:
-  include_line_expansion: true  # sets all lines dependent on 'define_expandable_line' to expandable
-  define_expandable_lines: 'all_congested_lines' # Options: 'all_congested_lines', 'all'
+  include_line_expansion: true  # activates line expansion, overrules define_expandable_lines
+  define_expandable_lines: 'predefined' # Options: 'all_congested_lines', 'all'
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
