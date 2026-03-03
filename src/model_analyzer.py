@@ -92,19 +92,36 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
             analysis_row['Renewable Curtailment [MWh]'] = 0
 
         # 4. Line Investments (Capacity added and Cost)
+        line_added_capacity = 0
+        line_investment_cost = 0
         if not n.lines.empty and 's_nom_extendable' in n.lines.columns:
             if n.lines.s_nom_extendable.any():
                 extendable_lines = n.lines[n.lines.s_nom_extendable]
-                added_capacity = (extendable_lines.s_nom_opt - extendable_lines.s_nom).clip(lower=0)
+                added_capacity = (extendable_lines.s_nom_opt - extendable_lines.s_nom)
 
-                analysis_row['Added Line Capacity [MVA]'] = added_capacity.sum()
-                analysis_row['Line Investment Cost [€]'] = (added_capacity * extendable_lines.capital_cost).sum()
-            else:
-                analysis_row['Added Line Capacity [MVA]'] = 0
-                analysis_row['Line Investment Cost [€]'] = 0
-        else:
-            analysis_row['Added Line Capacity [MVA]'] = 0
-            analysis_row['Line Investment Cost [€]'] = 0
+                line_added_capacity = added_capacity.sum()
+                line_investment_cost = (added_capacity * extendable_lines.capital_cost).sum()
+
+        analysis_row['Added Line Capacity [MVA]'] = line_added_capacity
+        analysis_row['Line Investment Cost [€]'] = line_investment_cost
+
+        # 5. Transformer Investments (Capacity added and Cost)
+        trafo_added_capacity = 0
+        trafo_investment_cost = 0
+        if not n.transformers.empty and 's_nom_extendable' in n.transformers.columns:
+            if n.transformers.s_nom_extendable.any():
+                extendable_trafos = n.transformers[n.transformers.s_nom_extendable]
+                added_capacity = (extendable_trafos.s_nom_opt - extendable_trafos.s_nom)
+
+                trafo_added_capacity = added_capacity.sum()
+                trafo_investment_cost = (added_capacity * extendable_trafos.capital_cost).sum()
+
+        analysis_row['Added Transformer Capacity [MVA]'] = trafo_added_capacity
+        analysis_row['Transformer Investment Cost [€]'] = trafo_investment_cost
+
+        # 6. Total Grid Expansion
+        analysis_row['Total Added Grid Capacity [MVA]'] = line_added_capacity + trafo_added_capacity
+        analysis_row['Total Grid Investment Cost [€]'] = line_investment_cost + trafo_investment_cost
 
         results_data.append(analysis_row)
 
