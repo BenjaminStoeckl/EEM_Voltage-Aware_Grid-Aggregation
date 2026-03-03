@@ -4,6 +4,7 @@ Module for loading and preparing the initial PyPSA network data.
 import logging
 import os
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import pypsa
@@ -353,5 +354,70 @@ def set_expanded_generation_as_default(n: pypsa.Network) -> pypsa.Network:
         logging.info("Finalized generator expansion: Set p_nom to p_nom_opt.")
     else:
         logging.warning("p_nom_opt not found in generators. p_nom was not updated.")
+
+    return n
+
+
+def add_alternative_shortest_path_routes(n: pypsa.Network, config: dict) -> pypsa.Network:
+    """
+    Identifies alternative routes for extendable lines using a different voltage level.
+    The logic finds the shortest path between the terminals of a congested line
+    using only components (lines) of a different voltage level and transformers.
+    """
+    if 'voltage_comparison_map' not in config.get('optimization_options', {}):
+        voltage_comparison_map = {220: 380, 380: 220}
+    else:
+        voltage_comparison_map = config['optimization_options']['voltage_comparison_map']
+
+    extendable_lines = n.lines[n.lines.s_nom_extendable].index
+    if extendable_lines.empty:
+        logging.info("No extendable lines found. Skipping alternative path search.")
+        return n
+
+    logging.info('Searching for alternative routes for congested lines using different voltage levels...')
+
+    congested_voltages = n.lines.loc[extendable_lines, 'v_nom'].unique()
+
+    for v_orig in congested_voltages:
+        # Build a graph excluding lines of v_orig
+        G = nx.Graph()
+
+        # Add lines that are NOT of v_orig
+        for idx, line in n.lines.iterrows():
+            if abs(line.v_nom - v_orig) > 10:
+                if G.has_edge(line.bus0, line.bus1):
+                    if line.length < G[line.bus0][line.bus1]['weight']:
+                        G.add_edge(line.bus0, line.bus1, weight=line.length, type='line', index=idx)
+                else:
+                    G.add_edge(line.bus0, line.bus1, weight=line.length, type='line', index=idx)
+
+        # Add all transformers
+        for idx, trafo in n.transformers.iterrows():
+            weight = 10.0  # Small penalty for trafo to represent voltage level change
+            if G.has_edge(trafo.bus0, trafo.bus1):
+                if weight < G[trafo.bus0][trafo.bus1]['weight']:
+                    G.add_edge(trafo.bus0, trafo.bus1, weight=weight, type='transformer', index=idx)
+            else:
+                G.add_edge(trafo.bus0, trafo.bus1, weight=weight, type='transformer', index=idx)
+
+        # For each extendable line of this voltage
+        current_v_lines = n.lines.loc[extendable_lines]
+        current_v_lines = current_v_lines[np.abs(current_v_lines.v_nom - v_orig) < 10]
+
+        for l_idx in current_v_lines.index:
+            line = n.lines.loc[l_idx]
+            try:
+                path_nodes = nx.shortest_path(G, source=line.bus0, target=line.bus1, weight='weight')
+                for i in range(len(path_nodes) - 1):
+                    u, v = path_nodes[i], path_nodes[i + 1]
+                    edge_data = G[u][v]
+                    if edge_data['type'] == 'line':
+                        n.lines.at[edge_data['index'], 's_nom_extendable'] = True
+                    elif edge_data['type'] == 'transformer':
+                        n.transformers.at[edge_data['index'], 's_nom_extendable'] = True
+                logging.info(f"Added alternative route for congested line {l_idx} ({v_orig} kV).")
+            except (nx.NetworkXNoPath, nx.NodeNotFound):
+                logging.info(f"No alternative path found for congested line {l_idx} ({v_orig} kV).")
+                pass
 
     return n

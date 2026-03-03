@@ -96,13 +96,14 @@ def main():
                 logging.info("Running grid expansion planning for the full (unaggregated) model.")
                 n_full_grid_expansion = pypsa_model.copy()
                 n_full_grid_expansion.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
+
+                n_full_grid_expansion = data_handling.add_alternative_shortest_path_routes(n_full_grid_expansion, config)
+
+                # Run the optimization for the full model with grid expansion
                 n_full_grid_expansion = model_runner.run_model_optimization(n_full_grid_expansion, "full_model_grid_exp", config)
 
-                # Identify congested lines and set them as extendable for the following aggregation steps
-                n_full_grid_expansion = data_handling.set_congested_lines_extendable(n_full_grid_expansion)
-
                 n_full_grid_expansion.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_full_grid_expansion.name + '.nc'))
-                plotting.plot_network_with_results_interactive(n_full_grid_expansion, config['results_path'])
+                plotting.plot_network_interactive(n_full_grid_expansion, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
             case 'presolved':
                 n_full_grid_expansion = data_handling.load_network(config, 'full_model_grid_exp_solved.nc')
@@ -120,6 +121,7 @@ def main():
                 logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
                 n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
 
+                n_agg_geo_va = data_handling.add_alternative_shortest_path_routes(n_agg_geo_va, config)
                 n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
 
                 n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
@@ -160,6 +162,7 @@ def main():
                 n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'],
                                                           line_strategies=config['line_strategies'])
 
+                n_agg_elec_va = data_handling.add_alternative_shortest_path_routes(n_agg_elec_va, config)
                 n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
 
                 n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
