@@ -18,10 +18,10 @@ aggregate_elec_va: 'presolved' # Options: true, false, 'presolved
 aggregate_elec_non_va: 'presolved' # Options: true, false, 'presolved'
 
 solver_options: {
-                  LogToConsole: 0,
-                  ResultFile: 'infeasibility.ilp',
-                  Method: 2,  # -1, standard solving approach, 2 barrier only
-                  Crossover: 0,  # 0 no crossover
+  LogToConsole: 0,
+  ResultFile: 'infeasibility.ilp',
+  Method: 2,  # -1, standard solving approach, 2 barrier only
+  Crossover: 0,  # 0 no crossover
 }
 
 optimization_options:
@@ -34,19 +34,19 @@ network_expansion_costs:
   trafo_expansion_cost_380-220: 136.78 # in Eur/MVA/a
 
 geo_va_aggregation:
-  num_of_clusters: 200
+  num_of_clusters: 500
   strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
 
 geo_non_va_aggregation:
-  num_of_clusters: 200
-  strategy: 'geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+  num_of_clusters: 500
+  strategy: 'geographical_kmedoids_haversine'  # Options: 'geographical_kmeans', 'geographical_kmedoids_euclidean'
 
 elec_va_aggregation:
-  num_of_clusters: 200
+  num_of_clusters: 500
   strategy: 'va_electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
 
 elec_non_va_aggregation:
-  num_of_clusters: 200
+  num_of_clusters: 500
   strategy: 'electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
 
 line_strategies:
@@ -55,9 +55,10 @@ line_strategies:
   s_nom: "sum"
   length: "average"
   capital_cost: "average"
-  s_max_pu: "sum"
+  s_max_pu: "average"
   num_parallel: "sum"
   v_nom: "average"
+  carrier: "first"
 
 
 temporal_clustering:

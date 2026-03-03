@@ -10,19 +10,24 @@ test_case: "elec.nc"
 preprocess_test_case: true
 aggregate_stub_lines: true
 temporal_aggregation: true
-run_full_model: true
-aggregate_geo_va: false
-aggregate_geo_non_va: false
+run_full_model_base: true
+
+run_full_model_grid_expansion: 'presolved' # Options: true, false, 'presolved'
+aggregate_geo_va: 'presolved' # Options: true, false, 'presolved'
+aggregate_geo_non_va: 'presolved' # Options: true, false, 'presolved'
+aggregate_elec_va: 'presolved' # Options: true, false, 'presolved
+aggregate_elec_non_va: 'presolved' # Options: true, false, 'presolved'
 
 solver_options: {
-                  LogToConsole: 0,
-                  ResultFile: 'infeasibility.ilp',
-                  Method: 2,  # -1, standard solving approach, 2 barrier only
-                  Crossover: 0,  # 0 no crossover
+  LogToConsole: 0,
+  ResultFile: 'infeasibility.ilp',
+  Method: 2,  # -1, standard solving approach, 2 barrier only
+  Crossover: 0,  # 0 no crossover
 }
 
 optimization_options:
-  include_line_expansion: false  # sets all lines 'under_construction' to expandable
+  include_line_expansion: true
+  define_expandable_lines: 'all_congested_lines' # Options: 'all_congested_lines', 'all'
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
@@ -31,32 +36,31 @@ network_expansion_costs:
 
 geo_va_aggregation:
   num_of_clusters: 500
-  strategy: 'va_geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
-
-  line_strategies:
-    x: "equivalent_reactance"
-    r: "equivalent_reactance"
-    s_nom: "sum"
-    length: "average"
-    capital_cost: "average"
-    s_max_pu: "sum"
-    num_parallel: "sum"
-    v_nom: "average"
-    carrier: "first"
+  strategy: 'va_geographical_kmedoids_haversine'  # Options: 'va_geographical', 'va_electrical_distance'
 
 geo_non_va_aggregation:
   num_of_clusters: 500
-  strategy: 'geographical_kmedoids_euclidean'  # Options: 'va_geographical', 'va_electrical_distance'
+  strategy: 'geographical_kmedoids_haversine'  # Options: 'geographical_kmeans', 'geographical_kmedoids_euclidean'
 
-  line_strategies:
-    x: "equivalent_reactance"
-    r: "equivalent_reactance"
-    s_nom: "sum"
-    length: "average"
-    capital_cost: "average"
-    s_max_pu: "sum"
-    num_parallel: "sum"
-    v_nom: "average"
+elec_va_aggregation:
+  num_of_clusters: 500
+  strategy: 'va_electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
+
+elec_non_va_aggregation:
+  num_of_clusters: 500
+  strategy: 'electrical_kmedoids'  # Options: 'va_geographical', 'va_electrical_kmedoids, va_electrical_hierarchical'
+
+line_strategies:
+  x: "equivalent_reactance"
+  r: "equivalent_reactance"
+  s_nom: "sum"
+  length: "average"
+  capital_cost: "average"
+  s_max_pu: "average"
+  num_parallel: "sum"
+  v_nom: "average"
+  carrier: "first"
+
 
 temporal_clustering:
   clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
@@ -74,4 +78,3 @@ aggregation_options:
     "1": "sum"
   storage_unit_strategies:
     "1": "sum"
-
