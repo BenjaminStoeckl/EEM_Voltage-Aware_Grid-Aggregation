@@ -33,7 +33,9 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     print(f"Attempting to load network from: {path_to_network}")
 
     n_full = pypsa.Network(path_to_network)
-    n_full.name = 'full_model'
+
+    if case is None:  # make sure that presolved networks are not named the same
+        n_full.name = 'full_model'
 
     return n_full
 
