@@ -53,7 +53,7 @@ def set_congested_lines_extendable(n: pypsa.Network) -> pypsa.Network:
     return n
 
 
-def run_expansion_planning(n: pypsa.Network, model_name: str, config: Dict, activate_line_expansion: bool = True) -> pypsa.Network:
+def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, activate_line_expansion: bool = True) -> pypsa.Network:
     """
     Configures and solves the network expansion planning problem.
 

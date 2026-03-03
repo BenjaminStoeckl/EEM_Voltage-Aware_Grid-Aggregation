@@ -5,6 +5,7 @@ Main script to run the grid aggregation testing framework.
 import argparse
 import logging
 import os
+import pypsa
 
 import yaml
 
@@ -69,7 +70,7 @@ def main():
     # -------------------------------------------------------------------------
     if config['run_full_model_base']:
         logging.info("Running generation expansion planning for the full (unaggregated) model.")
-        pypsa_model = model_runner.run_expansion_planning(pypsa_model, "full_model_base", config, activate_line_expansion=False)
+        pypsa_model = model_runner.run_model_optimization(pypsa_model, "full_model_base", config, activate_line_expansion=False)
 
         model_analyzer.analyze_network_results([pypsa_model])
 
@@ -77,7 +78,8 @@ def main():
         pypsa_model = data_handling.set_congested_lines_extendable(pypsa_model)
         pypsa_model = data_handling.set_expanded_generation_as_default(pypsa_model)
 
-        pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
+        if pypsa_model.model.solver_model is not None:
+            pypsa_model.model.solver_model = None  # Clear the solver model to enable copying the network
         pypsa_model.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
         pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
@@ -94,7 +96,7 @@ def main():
                 logging.info("Running grid expansion planning for the full (unaggregated) model.")
                 n_full_grid_expansion = pypsa_model.copy()
                 n_full_grid_expansion.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
-                n_full_grid_expansion = model_runner.run_expansion_planning(n_full_grid_expansion, "full_model_grid_exp", config)
+                n_full_grid_expansion = model_runner.run_model_optimization(n_full_grid_expansion, "full_model_grid_exp", config)
 
                 # Identify congested lines and set them as extendable for the following aggregation steps
                 n_full_grid_expansion = data_handling.set_congested_lines_extendable(n_full_grid_expansion)
@@ -118,7 +120,7 @@ def main():
                 logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
                 n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
 
-                n_agg_geo_va = model_runner.run_expansion_planning(n_agg_geo_va, 'model_geo_va_agg', config)
+                n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
 
                 n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
@@ -136,9 +138,10 @@ def main():
                 logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
                 n_agg_geo_non_va = pypsa_model.copy()
 
-                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'],
+                                                             line_strategies=config['line_strategies'])
 
-                n_agg_geo_non_va = model_runner.run_expansion_planning(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
+                n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
                 n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
@@ -154,9 +157,10 @@ def main():
         match config['aggregate_elec_va']:
             case 'true':
                 logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
-                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'],
+                                                          line_strategies=config['line_strategies'])
 
-                n_agg_elec_va = model_runner.run_expansion_planning(n_agg_elec_va, 'model_elec_va_agg', config)
+                n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
 
                 n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
@@ -174,9 +178,10 @@ def main():
                 logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
                 n_agg_elec_non_va = pypsa_model.copy()
 
-                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'],
+                                                              line_strategies=config['line_strategies'])
 
-                n_agg_elec_non_va = model_runner.run_expansion_planning(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
+                n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
                 n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
@@ -188,12 +193,25 @@ def main():
     # -------------------------------------------------------------------------
     logging.info("Comparing results between the full model and aggregated versions.")
     model_analyzer.analyze_active_slack_nodes(pypsa_model)
-    if config['run_full_model_grid_expansion'] and config['aggregate_geo_va'] and config['aggregate_geo_non_va'] and config['aggregate_elec_va'] and config['aggregate_elec_non_va']:
+    if (config['run_full_model_grid_expansion'] != 'false'
+        and config['aggregate_geo_va'] != 'false'
+        and config['aggregate_geo_non_va'] != 'false'
+        and config['aggregate_elec_va'] != 'false'
+        and config['aggregate_elec_non_va'] != 'false'):
+
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_non_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_non_va)
         model_analyzer.analyze_network_results([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
+
+        # create network collection for statistics
+        solved_networks = pypsa.NetworkCollection([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
+        expanded_capacity = solved_networks.statistics.expanded_capacity()
+        print(expanded_capacity[['Line', 'Transformer']])
+
+        expanded_capex = solved_networks.statistics.expanded_capex()
+        print(expanded_capex[['Line', 'Transformer']])
 
     logging.info("Workflow completed.")
 
