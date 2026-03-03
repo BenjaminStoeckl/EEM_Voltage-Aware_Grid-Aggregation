@@ -76,7 +76,9 @@ def main():
 
         # Identify congested lines and set them as extendable for the following aggregation steps
         pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model)
-        pypsa_model = data_handling.add_alternative_shortest_path_routes(pypsa_model, config)
+
+        if config['add_alternative_shortest_path_routes']:
+            pypsa_model = data_handling.add_alternative_shortest_path_routes(pypsa_model, config)
         pypsa_model = data_handling.set_expanded_generation_as_default(pypsa_model)
 
         if pypsa_model.model.solver_model is not None:

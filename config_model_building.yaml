@@ -8,15 +8,15 @@ path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 test_case: "elec.nc"
 
 preprocess_test_case: true
-aggregate_stub_lines: true
+aggregate_stub_lines: false
 temporal_aggregation: true
 run_full_model_base: true
 
-run_full_model_grid_expansion: 'presolved' # Options: true, false, 'presolved'
-aggregate_geo_va: 'presolved' # Options: true, false, 'presolved'
-aggregate_geo_non_va: 'presolved' # Options: true, false, 'presolved'
-aggregate_elec_va: 'presolved' # Options: true, false, 'presolved
-aggregate_elec_non_va: 'presolved' # Options: true, false, 'presolved'
+run_full_model_grid_expansion: 'false' # Options: true, false, 'presolved'
+aggregate_geo_va: 'false' # Options: true, false, 'presolved'
+aggregate_geo_non_va: 'false' # Options: true, false, 'presolved'
+aggregate_elec_va: 'false' # Options: true, false, 'presolved
+aggregate_elec_non_va: 'false' # Options: true, false, 'presolved'
 
 solver_options: {
   LogToConsole: 0,
@@ -24,6 +24,8 @@ solver_options: {
   Method: 2,  # -1, standard solving approach, 2 barrier only
   Crossover: 0,  # 0 no crossover
 }
+
+add_alternative_shortest_path_routes: false
 
 optimization_options:
   include_line_expansion: true

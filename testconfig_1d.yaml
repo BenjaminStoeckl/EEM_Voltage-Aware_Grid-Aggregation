@@ -24,6 +24,8 @@ solver_options: {
   Crossover: 0,  # 0 no crossover
 }
 
+add_alternative_shortest_path_routes: false
+
 optimization_options:
   include_line_expansion: true  # activates line expansion, overrules define_expandable_lines
   define_expandable_lines: 'predefined' # Options: 'all_congested_lines', 'all'
