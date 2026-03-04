@@ -148,6 +148,83 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
     return results_df
 
 
+def summarize_investment_comparison(networks: List[pypsa.Network], output_path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Creates a summary DataFrame comparing investment results across different models.
+    The first network in the list is treated as the 'Full Model' baseline for percentage deviations.
+
+    Args:
+        networks (List[pypsa.Network]): List of optimized PyPSA networks.
+        output_path (Optional[str]): Path to save the summary CSV.
+
+    Returns:
+        pd.DataFrame: Summary table of investment metrics.
+    """
+    summary_data = []
+    baseline_line_cost = None
+    baseline_trafo_cost = None
+
+    for i, n in enumerate(networks):
+        name = getattr(n, 'name', f"Model_{i}")
+
+        # Line investments
+        line_added_cap = 0
+        line_inv_cost = 0
+        line_count = 0
+        if not n.lines.empty and 's_nom_opt' in n.lines.columns:
+            diff = (n.lines.s_nom_opt - n.lines.s_nom).clip(lower=0)
+            invested_mask = diff > 1e-3
+            line_count = invested_mask.sum()
+            line_added_cap = diff.sum()
+            line_inv_cost = (diff * n.lines.capital_cost).sum()
+
+        # Transformer investments
+        trafo_added_cap = 0
+        trafo_inv_cost = 0
+        trafo_count = 0
+        if not n.transformers.empty and 's_nom_opt' in n.transformers.columns:
+            diff = (n.transformers.s_nom_opt - n.transformers.s_nom).clip(lower=0)
+            invested_mask = diff > 1e-3
+            trafo_count = invested_mask.sum()
+            trafo_added_cap = diff.sum()
+            trafo_inv_cost = (diff * n.transformers.capital_cost).sum()
+
+        if i == 0:
+            baseline_line_cost = line_inv_cost
+            baseline_trafo_cost = trafo_inv_cost
+
+        line_deviation = 0
+        if baseline_line_cost is not None and baseline_line_cost != 0:
+            line_deviation = (line_inv_cost - baseline_line_cost) / baseline_line_cost * 100
+
+        trafo_deviation = 0
+        if baseline_trafo_cost is not None and baseline_trafo_cost != 0:
+            trafo_deviation = (trafo_inv_cost - baseline_trafo_cost) / baseline_trafo_cost * 100
+
+        summary_data.append({
+            'Model': name,
+            'Line Expanded Capacity [GVA]': line_added_cap / 1e3,
+            'Line Investment Cost [M€]': line_inv_cost / 1e6,
+            'Line Cost Deviation [%]': line_deviation,
+            'Invested Lines [#]': line_count,
+            'Trafo Expanded Capacity [GVA]': trafo_added_cap / 1e3,
+            'Trafo Investment Cost [M€]': trafo_inv_cost / 1e6,
+            'Trafo Cost Deviation [%]': trafo_deviation,
+            'Invested Transformers [#]': trafo_count
+        })
+
+    df = pd.DataFrame(summary_data).set_index('Model')
+    df = df.round(2)
+
+    if output_path:
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        df.to_csv(output_path)
+        logging.info(f"Investment comparison summary saved to: {output_path}")
+        logging.info("\n" + df.to_string())
+
+    return df
+
+
 def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
     """
     Identifies buses where slack generators are producing non-zero power
