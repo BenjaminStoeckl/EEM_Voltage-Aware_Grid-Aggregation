@@ -25,13 +25,13 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     """
 
     if case is not None:
-        print(f"Overriding test case from config with provided case: {case}")
+        logging.info(f"Overriding test case from config with provided case: {case}")
     else:
         case = config['test_case']
 
     path_to_network = os.path.join(config['pypsa_eur_test_case_path'], 'networks', case)
 
-    print(f"Attempting to load network from: {path_to_network}")
+    logging.info(f"Attempting to load network from: {path_to_network}")
 
     n_full = pypsa.Network(path_to_network)
 
@@ -187,7 +187,7 @@ def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
 
     file_path = os.path.join("data", "transformers_estimated.csv")
     if not os.path.exists(file_path):
-        print(f"Warning: {file_path} not found. Skipping estimated transformer data.")
+        logging.warning(f"{file_path} not found. Skipping estimated transformer data.")
         return n
 
     df_est = pd.read_csv(file_path, sep=',', decimal='.')

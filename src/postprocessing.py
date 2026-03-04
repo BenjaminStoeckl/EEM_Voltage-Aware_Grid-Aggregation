@@ -1,6 +1,7 @@
 """
 Module for postprocessing and comparing results from different model runs.
 """
+import logging
 import pypsa
 from typing import Dict, Optional
 
@@ -39,7 +40,7 @@ def compare_results(full_model_path: str, aggregated_model_paths: Dict[str, Opti
                                                            strategy names to their result file paths.
         config (Dict): The main configuration dictionary.
     """
-    print("\n--- Result Comparison ---")
+    logging.info("\n--- Result Comparison ---")
     
     # In a real scenario, we would load the networks like this:
     # full_n = pypsa.Network(full_model_path)
@@ -47,13 +48,13 @@ def compare_results(full_model_path: str, aggregated_model_paths: Dict[str, Opti
     
     # Dummy full model cost
     full_model_cost = 1_000_000 
-    print(f"Full Model Grid Expansion Cost: ${full_model_cost:,\.2f}")
+    logging.info(f"Full Model Grid Expansion Cost: ${full_model_cost:,.2f}")
 
     # Compare each aggregated model
     for name, path in aggregated_model_paths.items():
         if path is None:
-            print(f"\nStrategy: '{name}'")
-            print("  -> No results available (step was skipped).")
+            logging.info(f"\nStrategy: '{name}'")
+            logging.info("  -> No results available (step was skipped).")
             continue
             
         # aggregated_n = pypsa.Network(path)
@@ -63,8 +64,8 @@ def compare_results(full_model_path: str, aggregated_model_paths: Dict[str, Opti
         difference = aggregated_model_cost - full_model_cost
         percentage_diff = (difference / full_model_cost) * 100 if full_model_cost != 0 else 0
         
-        print(f"\nStrategy: '{name}'")
-        print(f"  -> Aggregated Model Cost: ${aggregated_model_cost:,\.2f}")
-        print(f"  -> Difference from Full Model: ${difference:,\.2f} ({percentage_diff:.2f}%)")
+        logging.info(f"\nStrategy: '{name}'")
+        logging.info(f"  -> Aggregated Model Cost: ${aggregated_model_cost:,.2f}")
+        logging.info(f"  -> Difference from Full Model: ${difference:,.2f} ({percentage_diff:.2f}%)")
 
-    print("\n--- End of Comparison ---\\n")
+    logging.info("\n--- End of Comparison ---\n")

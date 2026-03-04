@@ -1,6 +1,7 @@
 """
 Module for grid aggregation using native PyPSA clustering methods.
 """
+import logging
 import pypsa
 from typing import Dict
 
@@ -20,7 +21,7 @@ def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
     Returns:
         pypsa.Network: The aggregated network.
     """
-    print("Aggregating network with native PyPSA geographical clustering...")
+    logging.info("Aggregating network with native PyPSA geographical clustering...")
     
     # The actual aggregation logic will be implemented here.
     # This is a placeholder for the PyPSA function call.
@@ -28,7 +29,7 @@ def aggregate(n: pypsa.Network, aggregation_options: Dict) -> pypsa.Network:
     # aggregated_n = pypsa.networkclustering.cluster_network(n, **aggregation_options)
     
     # For now, we return a simplified representation of the network
-    print("PyPSA native aggregation not yet fully implemented. Returning a simplified network.")
+    logging.info("PyPSA native aggregation not yet fully implemented. Returning a simplified network.")
     
     # Create a dummy aggregated network for workflow testing
     n_agg = pypsa.Network()

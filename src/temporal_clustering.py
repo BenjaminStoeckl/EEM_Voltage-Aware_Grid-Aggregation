@@ -1,6 +1,7 @@
 """
 Module for temporal (time-series) clustering of the network.
 """
+import logging
 from typing import Dict, Optional
 
 import pandas as pd
@@ -24,7 +25,7 @@ def aggregate_temporally_by_downsampling(n: pypsa.Network, temporal_config: Dict
     Returns:
         pypsa.Network: A new network object with clustered time series.
     """
-    print(f"Performing temporal clustering to {temporal_config['n_timestep_clusters']} periods...")
+    logging.info(f"Performing temporal clustering to {temporal_config['n_timestep_clusters']} periods...")
     # The actual clustering logic will be implemented here.
     # For now, we'll just return the network as is.
     # A typical implementation would use tsam or pypsa.clustering.
@@ -58,7 +59,7 @@ def create_snapshot_series_from_temporal_clustering(
                    the cluster IDs (integers or strings).
     """
     n_clusters = temporal_clustering_config['n_timestep_clusters']
-    print(f"Clustering snapshots into {n_clusters} groups based on aggregated network {time_series_component} time series...")
+    logging.info(f"Clustering snapshots into {n_clusters} groups based on aggregated network {time_series_component} time series...")
 
     # 1. Extract relevant time series for the entire network
     # The time_series_component parameter will now dictate which specific combination
@@ -136,10 +137,10 @@ def aggregate_temporally_by_clustering(n: pypsa.Network, config: dict) -> pypsa.
     """
 
     if config['clustering_strategy'] == 'downsampling':
-        print("Using downsampling for temporal aggregation.")
+        logging.info("Using downsampling for temporal aggregation.")
         return aggregate_temporally_by_downsampling(n, config)
     elif config['clustering_strategy'] == 'kmeans':
-        print("Using k-means clustering for temporal aggregation.")
+        logging.info("Using k-means clustering for temporal aggregation.")
         # get snapshot_cluster_series from temporal clustering
         snapshot_cluster_series = create_snapshot_series_from_temporal_clustering(n, temporal_clustering_config=config)
         clustered = from_snapshot_map(n, snapshot_cluster_series)

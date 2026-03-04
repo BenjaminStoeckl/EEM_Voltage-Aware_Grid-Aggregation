@@ -1,6 +1,7 @@
 """
 Module for configuring and running the PyPSA optimization models.
 """
+import logging
 import os
 from typing import Dict
 
@@ -23,13 +24,13 @@ def set_congested_lines_extendable(n: pypsa.Network) -> pypsa.Network:
         pypsa.Network: The updated PyPSA network with 's_nom_extendable' set for congested lines.
     """
     if n.lines_t.p0.empty:
-        print("Warning: No time-dependent line data (n.lines_t.p0) found. Cannot determine congestion.")
+        logging.warning("No time-dependent line data (n.lines_t.p0) found. Cannot determine congestion.")
         n.lines['s_nom_extendable'] = False  # Ensure it's set to False
         return n
 
     lines_with_flow_data = n.lines.index.intersection(n.lines_t.p0.columns)
     if lines_with_flow_data.empty:
-        print("Warning: No power flow data found for any line in n.lines_t.p0. No lines will be set as extendable.")
+        logging.warning("No power flow data found for any line in n.lines_t.p0. No lines will be set as extendable.")
         n.lines['s_nom_extendable'] = False  # Ensure it's set to False
         return n
 
@@ -86,7 +87,7 @@ def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, acti
         n.lines['s_nom_extendable'] = False
         n.transformers['s_nom_extendable'] = False
 
-    print(f"Running optimization for '{model_name}'...")
+    logging.info(f"Running optimization for '{model_name}'...")
 
     try:
         path_temp_files = os.path.join(config['path_for_temporary_files'], 'pypsa_model.lp')
@@ -96,14 +97,14 @@ def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, acti
                    compute_infeasibilities=True,
                    include_objective_constant=True)
 
-        print(f"Optimization for '{model_name}' complete (simulation).")
+        logging.info(f"Optimization for '{model_name}' complete (simulation).")
         n.name = f'{model_name}_solved'
     except Exception as e:
-        print(f"Could not run optimization for '{model_name}', Error: {e}")
+        logging.error(f"Could not run optimization for '{model_name}', Error: {e}")
 
     # Save the results
     results_path = os.path.join(results_dir, "results.nc")
     # n.export_to_netcdf(results_path)
-    # print(f"Results for '{model_name}' saved to '{results_path}' (simulation).")
+    # logging.info(f"Results for '{model_name}' saved to '{results_path}' (simulation).")
 
     return n

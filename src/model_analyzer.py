@@ -1,3 +1,4 @@
+import logging
 import pypsa
 import pandas as pd
 import os
@@ -131,10 +132,10 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
     # Round all numeric values to 2 decimals
     results_df = results_df.round(2)
 
-    print("\nAnalyzed Network Results (Summed over all snapshots):")
+    logging.info("\nAnalyzed Network Results (Summed over all snapshots):")
     # Set 'Network' as index and transpose for desired output format
     formatted_output_df = results_df.set_index('Network').T
-    print(formatted_output_df.to_string())
+    logging.info(formatted_output_df.to_string())
 
     # Export to CSV if output_path is provided
     if output_path:
@@ -142,7 +143,7 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
         if directory:
             os.makedirs(directory, exist_ok=True)
         results_df.to_csv(output_path, index=False)
-        print(f"Analysis results exported to: {output_path}")
+        logging.info(f"Analysis results exported to: {output_path}")
 
     return results_df
 
@@ -163,7 +164,7 @@ def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
     slack_gens = n.generators[slack_gen_mask]
 
     if slack_gens.empty or n.generators_t.p.empty:
-        print("No slack generators found or no production data available.")
+        logging.info("No slack generators found or no production data available.")
         return pd.Series(dtype=float)
 
     # 2. Get the time-series production (p) for only the slack generators
@@ -176,7 +177,7 @@ def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
     active_slack_totals = slack_totals[slack_totals > 1e-3]  # Use small epsilon for float precision
 
     if active_slack_totals.empty:
-        print("No active slack production detected (All slack generators are at 0).")
+        logging.info("No active slack production detected (All slack generators are at 0).")
         return pd.Series(dtype=float)
 
     # 5. Map the generator names back to their respective buses
@@ -188,11 +189,11 @@ def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
 
     bus_slack_summary = active_slack_df.groupby('bus')['production'].sum()
 
-    print("\n--- Active Slack Production by Node ---")
+    logging.info("\n--- Active Slack Production by Node ---")
     for bus, val in bus_slack_summary.items():
         if val > 0.1:  # Only print significant slack production
-            print(f"Bus {bus}: {val:.2f} MWh")
+            logging.info(f"Bus {bus}: {val:.2f} MWh")
 
-    print(f"Total System-wide Slack Production: {bus_slack_summary.sum():.2f} MWh")
+    logging.info(f"Total System-wide Slack Production: {bus_slack_summary.sum():.2f} MWh")
 
     return bus_slack_summary

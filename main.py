@@ -5,21 +5,22 @@ Main script to run the grid aggregation testing framework.
 import argparse
 import logging
 import os
-import pypsa
+from datetime import datetime
 
+import pypsa
 import yaml
 
 from src import data_handling, temporal_clustering, model_runner, plotting, model_analyzer
 from src.aggregation import pypsa_native, npap_clustering
-
-# Set up basic logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 def main():
     """
     Orchestrates the entire workflow for comparing grid aggregation methods.
     """
+    # Set up basic logging to console
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     # -------------------------------------------------------------------------
     # 1. Argument Parsing & Initialization
     # -------------------------------------------------------------------------
@@ -38,6 +39,26 @@ def main():
     logging.info(f"Loading configuration from {args.config_file}")
     with open(args.config_file) as f:
         config = yaml.safe_load(f)
+
+    # -------------------------------------------------------------------------
+    # Add File Logging
+    # -------------------------------------------------------------------------
+    # Determine the number of nodes (clusters) for the filename
+    num_nodes = "unknown"
+    for key in ['geo_va_aggregation', 'geo_non_va_aggregation', 'elec_va_aggregation', 'elec_non_va_aggregation']:
+        if isinstance(config.get(key), dict) and 'num_of_clusters' in config[key]:
+            num_nodes = str(config[key]['num_of_clusters'])
+            break
+
+    # Setup logs directory in the results path
+    logs_dir = os.path.join(config['results_path'], 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+
+    log_filename = os.path.join(logs_dir, f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{num_nodes}nodes.txt")
+    file_handler = logging.FileHandler(log_filename)
+    file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+    logging.getLogger().addHandler(file_handler)
+    logging.info(f"Log output also saved to: {log_filename}")
 
     # -------------------------------------------------------------------------
     # 3. Network Loading & Pre-processing
@@ -215,10 +236,10 @@ def main():
         # create network collection for statistics
         solved_networks = pypsa.NetworkCollection([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
         expanded_capacity = solved_networks.statistics.expanded_capacity()
-        print(expanded_capacity[['Line', 'Transformer']])
+        logging.info(expanded_capacity[['Line', 'Transformer']])
 
         expanded_capex = solved_networks.statistics.expanded_capex()
-        print(expanded_capex[['Line', 'Transformer']])
+        logging.info(expanded_capex[['Line', 'Transformer']])
 
     logging.info("Workflow completed.")
 
