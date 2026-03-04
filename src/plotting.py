@@ -145,6 +145,84 @@ def get_line_colors_by_congestion(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
+def get_line_colors_by_expansion(n: pypsa.Network) -> pd.Series:
+    """
+    Calculates line colors based on whether the line capacity was expanded (s_nom_opt > s_nom).
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding colors as values.
+                   Expanded lines are red, others are black.
+    """
+    try:
+        line_colors = pd.Series('black', index=n.lines.index, dtype=str)
+
+        if 's_nom_opt' in n.lines.columns:
+            # Check for expansion with a small tolerance for float precision
+            expanded_mask = (n.lines['s_nom_opt'] > n.lines['s_nom'] + 1e-3)
+            line_colors.loc[expanded_mask] = 'red'
+
+        return line_colors
+
+    except Exception as e:
+        logging.error(f"Error calculating line colors by expansion: {e}")
+        return pd.Series(dtype=str)
+
+
+def get_transformer_colors_by_expansion(n: pypsa.Network) -> pd.Series:
+    """
+    Calculates transformer colors based on whether the capacity was expanded (s_nom_opt > s_nom).
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+
+    Returns:
+        pd.Series: A pandas Series with transformer names as index and corresponding colors as values.
+                   Expanded transformers are purple, others are black.
+    """
+    try:
+        trafo_colors = pd.Series('black', index=n.transformers.index, dtype=str)
+
+        if 's_nom_opt' in n.transformers.columns:
+            # Check for expansion with a small tolerance for float precision
+            expanded_mask = (n.transformers['s_nom_opt'] > n.transformers['s_nom'] + 1e-3)
+            trafo_colors.loc[expanded_mask] = 'purple'
+
+        return trafo_colors
+
+    except Exception as e:
+        logging.error(f"Error calculating transformer colors by expansion: {e}")
+        return pd.Series(dtype=str)
+
+
+def get_transformer_widths_by_expansion(n: pypsa.Network, scale: float = 0.01, min_width: float = 3.0) -> pd.Series:
+    """
+    Calculates transformer widths based on the amount of capacity expansion (s_nom_opt - s_nom).
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+        scale (float): Scaling factor for the expansion amount.
+        min_width (float): Minimum width for all transformers.
+
+    Returns:
+        pd.Series: A pandas Series with transformer names as index and corresponding widths as values.
+    """
+    try:
+        widths = pd.Series(min_width, index=n.transformers.index)
+
+        if 's_nom_opt' in n.transformers.columns:
+            expansion = (n.transformers['s_nom_opt'] - n.transformers['s_nom']).clip(lower=0)
+            widths += expansion * scale
+
+        return widths
+
+    except Exception as e:
+        logging.error(f"Error calculating transformer widths by expansion: {e}")
+        return pd.Series(min_width, index=n.transformers.index)
+
+
 def plot_network(n: pypsa.Network, output_file: str):
     """
     Generates a static geographical plot of the PyPSA network and saves it as an SVG file.
@@ -175,13 +253,17 @@ def plot_network(n: pypsa.Network, output_file: str):
         logging.error(f"{e}")
 
 
-def plot_network_interactive(n: pypsa.Network, output_file: str, line_color_func: Callable = get_line_colors_by_voltage):
+def plot_network_interactive(n: pypsa.Network, output_file: str, 
+                             line_color_func: Callable = get_line_colors_by_voltage,
+                             line_width_func: Callable = None,
+                             transformer_color_func: Callable = None,
+                             transformer_width_func: Callable = None):
     """
     Generates an interactive geographical plot of the PyPSA network using `n.explore()`
     and saves it to an HTML file.
 
-    This function can visualize the network with different line colorings by passing
-    a coloring function to `line_color_func`. By default, it colors lines by voltage level.
+    This function can visualize the network with different line colorings and widths by passing
+    appropriate functions. By default, it colors lines by voltage level.
 
     Args:
         n (pypsa.Network): The PyPSA network to plot.
@@ -190,6 +272,12 @@ def plot_network_interactive(n: pypsa.Network, output_file: str, line_color_func
         line_color_func (Callable): A function that takes a PyPSA network and returns a
                                     pandas Series of line colors. Defaults to
                                     `get_line_colors_by_voltage`.
+        line_width_func (Callable, optional): A function that takes a PyPSA network and returns a
+                                              pandas Series of line widths.
+        transformer_color_func (Callable, optional): A function that takes a PyPSA network and returns a
+                                                     pandas Series of transformer colors.
+        transformer_width_func (Callable, optional): A function that takes a PyPSA network and returns a
+                                                     pandas Series of transformer widths.
     """
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
@@ -197,8 +285,16 @@ def plot_network_interactive(n: pypsa.Network, output_file: str, line_color_func
         # Ensure the directory exists
         os.makedirs(os.path.join(output_file, n.name), exist_ok=True)
 
-        map = n.explore(line_color=line_color_func(n),
-                        transformer_width=3,
+        line_color = line_color_func(n)
+        line_width = line_width_func(n) if line_width_func else 2
+        
+        transformer_color = transformer_color_func(n) if transformer_color_func else 'orange'
+        transformer_width = transformer_width_func(n) if transformer_width_func else 3
+
+        map = n.explore(line_color=line_color,
+                        line_width=line_width,
+                        transformer_color=transformer_color,
+                        transformer_width=transformer_width,
                         tooltip=True,
                         jitter=0.05, )
         map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))

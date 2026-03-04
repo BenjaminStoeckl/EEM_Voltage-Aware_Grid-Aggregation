@@ -129,8 +129,11 @@ def main():
 
                 n_full_grid_expansion.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_full_grid_expansion.name + '.nc'))
                 plotting.plot_network_interactive(n_full_grid_expansion, config['results_path'],
-                                                  line_color_func=plotting.get_line_colors_by_extendable)
-
+                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_width_func=plotting.get_line_widths_by_expansion,
+                                                  transformer_color_func=plotting.get_transformer_colors_by_expansion,
+                                                  transformer_width_func=plotting.get_transformer_widths_by_expansion)
+                
             case 'presolved':
                 n_full_grid_expansion = data_handling.load_network(config, 'full_model_grid_exp_solved.nc')
 
@@ -153,7 +156,11 @@ def main():
                 n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
 
                 n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
-                plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], 
+                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_width_func=plotting.get_line_widths_by_expansion,
+                                                  transformer_color_func=plotting.get_transformer_colors_by_expansion,
+                                                  transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
                 n_agg_geo_va = data_handling.load_network(config, 'model_geo_va_agg_solved.nc')
 
@@ -175,7 +182,11 @@ def main():
                 n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
                 n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
-                plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], 
+                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_width_func=plotting.get_line_widths_by_expansion,
+                                                  transformer_color_func=plotting.get_transformer_colors_by_expansion,
+                                                  transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
                 n_agg_geo_non_va = data_handling.load_network(config, 'model_geo_non_va_agg_solved.nc')
 
@@ -196,7 +207,11 @@ def main():
                 n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
 
                 n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
-                plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], 
+                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_width_func=plotting.get_line_widths_by_expansion,
+                                                  transformer_color_func=plotting.get_transformer_colors_by_expansion,
+                                                  transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
                 n_agg_elec_va = data_handling.load_network(config, 'model_elec_va_agg_solved.nc')
 
@@ -218,7 +233,11 @@ def main():
                 n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
                 n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
-                plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], 
+                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_width_func=plotting.get_line_widths_by_expansion,
+                                                  transformer_color_func=plotting.get_transformer_colors_by_expansion,
+                                                  transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
                 n_agg_elec_non_va = data_handling.load_network(config, 'model_elec_non_va_agg_solved.nc')
 
