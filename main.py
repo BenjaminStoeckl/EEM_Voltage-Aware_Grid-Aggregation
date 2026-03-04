@@ -108,7 +108,7 @@ def main():
         pypsa_model.generators['p_nom_extendable'] = False  # set all generators to not extendable by default
 
         pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
-        plotting.plot_network_with_results_interactive(pypsa_model, config['results_path'])
+        plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_expansion)
 
     # -------------------------------------------------------------------------
     # 5. Full Model Grid Expansion Execution
@@ -256,6 +256,11 @@ def main():
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_non_va)
         model_analyzer.analyze_network_results([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
+        
+        # Summarize investment comparison
+        summary_path = os.path.join(config['results_path'], 'investment_comparison_summary.csv')
+        model_analyzer.summarize_investment_comparison([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va], 
+                                                        output_path=summary_path)
 
         # create network collection for statistics
         solved_networks = pypsa.NetworkCollection([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
