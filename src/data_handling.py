@@ -112,7 +112,7 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
     # Add estimated transformer data
-    n = _add_estimated_transformer_data(n)
+    # n = _add_estimated_transformer_data(n)
 
     # Define line capacities for lines with s_nom = 0
     n = _define_line_capacities(n)
@@ -362,6 +362,7 @@ def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold:
 
     # 2. Handle Transformers
     if not n.transformers_t.p0.empty:
+        threshold = 0.2
         s_max_pu_trafo = n.transformers.get('s_max_pu', 1.0)
         s_nom_trafo = n.transformers.s_nom
 

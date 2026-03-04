@@ -171,6 +171,32 @@ def get_line_colors_by_expansion(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
+def get_line_widths_by_expansion(n: pypsa.Network, scale: float = 0.005, min_width: float = 2.0) -> pd.Series:
+    """
+    Calculates line widths based on the amount of capacity expansion (s_nom_opt - s_nom).
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+        scale (float): Scaling factor for the expansion amount.
+        min_width (float): Minimum width for all lines.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding widths as values.
+    """
+    try:
+        widths = pd.Series(min_width, index=n.lines.index)
+
+        if 's_nom_opt' in n.lines.columns:
+            expansion = (n.lines['s_nom_opt'] - n.lines['s_nom']).clip(lower=0)
+            widths += expansion * scale
+
+        return widths
+
+    except Exception as e:
+        logging.error(f"Error calculating line widths by expansion: {e}")
+        return pd.Series(min_width, index=n.lines.index)
+
+
 def get_transformer_colors_by_expansion(n: pypsa.Network) -> pd.Series:
     """
     Calculates transformer colors based on whether the capacity was expanded (s_nom_opt > s_nom).
