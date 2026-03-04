@@ -89,6 +89,7 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
         extendable_any = n.lines.s_nom_extendable.groupby(result.linemap).any()
         network.lines['s_nom_extendable'] = False
         network.lines.loc[extendable_any.index, 's_nom_extendable'] = extendable_any
+        logging.info(f"Mapped 's_nom_extendable' for {len(extendable_any)} aggregated lines based on original line data.")
 
     # Map s_nom_extendable for transformers
     if 's_nom_extendable' in n.transformers.columns and not network.transformers.empty:
@@ -100,6 +101,7 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
             extendable_any_trafo = n.transformers.s_nom_extendable.loc[valid_traftomap.index].groupby(valid_traftomap).any()
             network.transformers['s_nom_extendable'] = False
             network.transformers.loc[extendable_any_trafo.index, 's_nom_extendable'] = extendable_any_trafo
+            logging.info(f"Mapped 's_nom_extendable' for {len(extendable_any_trafo)} aggregated transformers based on original transformer data.")
 
     network.name = 'model_agg_npap'
     network.sanitize()
