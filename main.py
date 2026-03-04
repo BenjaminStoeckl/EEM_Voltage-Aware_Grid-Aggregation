@@ -128,7 +128,8 @@ def main():
                 n_full_grid_expansion = model_runner.run_model_optimization(n_full_grid_expansion, "full_model_grid_exp", config)
 
                 n_full_grid_expansion.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_full_grid_expansion.name + '.nc'))
-                plotting.plot_network_interactive(n_full_grid_expansion, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+                plotting.plot_network_interactive(n_full_grid_expansion, config['results_path'],
+                                                  line_color_func=plotting.get_line_colors_by_extendable)
 
             case 'presolved':
                 n_full_grid_expansion = data_handling.load_network(config, 'full_model_grid_exp_solved.nc')
@@ -144,7 +145,9 @@ def main():
         match config['aggregate_geo_va']:
             case 'true':
                 logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'], line_strategies=config['line_strategies'])
+                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'],
+                                                         line_strategies=config['line_strategies'],
+                                                         transformer_strategies=config.get('transformer_strategies'))
 
                 # n_agg_geo_va = data_handling.add_alternative_shortest_path_routes(n_agg_geo_va, config)
                 n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
@@ -166,7 +169,8 @@ def main():
                 n_agg_geo_non_va = pypsa_model.copy()
 
                 n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'],
-                                                             line_strategies=config['line_strategies'])
+                                                             line_strategies=config['line_strategies'],
+                                                             transformer_strategies=config.get('transformer_strategies'))
 
                 n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
@@ -185,7 +189,8 @@ def main():
             case 'true':
                 logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
                 n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'],
-                                                          line_strategies=config['line_strategies'])
+                                                          line_strategies=config['line_strategies'],
+                                                          transformer_strategies=config.get('transformer_strategies'))
 
                 # n_agg_elec_va = data_handling.add_alternative_shortest_path_routes(n_agg_elec_va, config)
                 n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
@@ -207,7 +212,8 @@ def main():
                 n_agg_elec_non_va = pypsa_model.copy()
 
                 n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'],
-                                                              line_strategies=config['line_strategies'])
+                                                              line_strategies=config['line_strategies'],
+                                                              transformer_strategies=config.get('transformer_strategies'))
 
                 n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
@@ -226,7 +232,6 @@ def main():
         and config['aggregate_geo_non_va'] != 'false'
         and config['aggregate_elec_va'] != 'false'
         and config['aggregate_elec_non_va'] != 'false'):
-
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_non_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_va)

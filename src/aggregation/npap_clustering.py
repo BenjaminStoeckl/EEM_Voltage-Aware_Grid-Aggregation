@@ -6,7 +6,7 @@ from pypsa.clustering.npap import npap_clustering
 from pypsa.clustering.spatial import DEFAULT_ONE_PORT_STRATEGIES
 
 
-def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: dict) -> pypsa.Network:
+def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: dict, transformer_strategies: dict = None) -> pypsa.Network:
     """
     A placeholder for the voltage-aware aggregation method.
 
@@ -16,6 +16,8 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
     Args:
         n (pypsa.Network): The network to be aggregated.
         va_aggregation_config: configuration for voltage-aware aggregation, e.g., {'num_of_clusters': 100, 'strategy': 'va_electrical_kmedoids'}.
+        line_strategies: strategies for aggregating line attributes.
+        transformer_strategies: strategies for aggregating transformer attributes.
 
 
     Raises:
@@ -41,6 +43,7 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
         include_links=True,
         voltage_levels=[220, 380],
         line_strategies=line_strategies,
+        transformer_strategies=transformer_strategies,
     )
 
     network = result.n

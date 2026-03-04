@@ -63,6 +63,16 @@ line_strategies:
   v_nom: "average"
   carrier: "first"
 
+transformer_strategies:
+  x: "equivalent_reactance"
+  r: "equivalent_reactance"
+  s_nom: "sum"
+  capital_cost: "average"
+  s_max_pu: "average"
+  carrier: "first"
+  num_parallel: 'sum'
+  tap_ratio: 'first'
+
 
 temporal_clustering:
   clustering_strategy: 'downsampling'  # Options: 'downsampling', 'kmeans'
