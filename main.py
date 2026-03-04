@@ -61,9 +61,10 @@ def main():
         pypsa_model = temporal_clustering.aggregate_temporally_by_clustering(pypsa_model, config['temporal_clustering'])
         pypsa_model.name = 'model_clustered_temporal'
 
-    # Save the base model state
-    pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
-    plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+    if config['preprocess_test_case'] or config['aggregate_stub_lines'] or config['temporal_aggregation']:
+        # Save the base model state
+        pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
+        plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
 
     # -------------------------------------------------------------------------
     # 5. Full Model Baseline Execution
