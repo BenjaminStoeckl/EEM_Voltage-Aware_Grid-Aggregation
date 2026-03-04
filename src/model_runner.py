@@ -71,6 +71,7 @@ def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, acti
     os.makedirs(results_dir, exist_ok=True)
 
     n.lines['under_construction'] = False  # set all lines to not under construction by default
+    n.transformers['s_nom_pu'] = 0.7  # set transformers to 0.7 same as lines
 
     if config['optimization_options']['include_line_expansion'] and activate_line_expansion:
         match config['optimization_options']['define_expandable_lines']:
