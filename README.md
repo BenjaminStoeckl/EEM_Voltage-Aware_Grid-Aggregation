@@ -34,6 +34,61 @@ This repository contains a Python framework designed to compare different grid a
 └── ...                       # Other project files (e.g., .git, .idea, __pycache__)
 ```
 
+## Process Flow Chart
+
+```mermaid
+graph TD
+    Start([Start]) --> Init[1. Load Configuration]
+    Init --> LoadNet[2. Load PyPSA Network]
+    
+    LoadNet --> PreProcExec[3. Preprocessing: <br> Add Slack Generators, Sanitize, Add Trafo Data, <br> Expansion Costs, Define Line capacity]
+    PreProcExec --> Simp
+    
+    subgraph Simplification [3. Network Simplification]
+        Simp{Aggregate <br> Stub Lines?}
+        Simp -- Yes --> StubExec[Aggregate Stub Lines]
+        Simp -- No --> SimpTemp
+        StubExec --> SimpTemp
+        SimpTemp{Aggregate <br> temporally?}
+        SimpTemp -- Yes --> TempExec[Aggregate Temporally]
+        SimpTemp -- No -->  Baseline
+        TempExec  --> Baseline
+    end
+
+    subgraph Full_Model [4. Full Model Baseline]
+        Baseline[Run Base Optimization - only Generation Expansion]
+        Baseline --> Congestion[Identify Congested Lines & Trafos and <br> set as Investment Candidates]
+        Congestion --> AltRoute{Add <br> Alternative <br> Routes?}
+        AltRoute -- Yes --> AltRouteExec[Find Alternative <br> Route for Investment]
+        AltRoute -- No --> FullGridExec[Run Full Model <br> with Grid Expansion]
+        AltRouteExec --> FullGridExec
+    end
+
+    FullGridExec --> Agg1
+    FullGridExec --> Agg2
+    FullGridExec --> Agg3
+    FullGridExec --> Agg4
+
+    subgraph Aggregation_Scenarios [5. Aggregation & Optimization]
+        Agg1[Geo Voltage-Aware Agg] --> Opt1[Optimize Agg Model 1]
+        Agg2[Geo Non-Voltage-Aware Agg] --> Opt2[Optimize Agg Model 2]
+        Agg3[Elec Voltage-Aware Agg] --> Opt3[Optimize Agg Model 3]
+        Agg4[Elec Non-Voltage-Aware Agg] --> Opt4[Optimize Agg Model 4]
+    end
+
+    Opt1 --> Analysis
+    Opt2 --> Analysis
+    Opt3 --> Analysis
+    Opt4 --> Analysis
+
+    subgraph Final_Analysis [6. Comparison & Statistics]
+        Analysis[Analyze Slack Nodes & Results]
+        Analysis --> Stats[Calculate Expanded Capacity & CAPEX Statistics]
+    end
+
+    Stats --> End([End Workflow])
+```
+
 ## Installation
 
 This project uses a Conda environment for dependency management.
@@ -112,15 +167,6 @@ The script will:
 5.  (Future/Commented out functionality) Run aggregation using native PyPSA methods and voltage-aware methods, and compare results.
 
 Outputs, including plots and simulation results, will be saved to the `results_path` specified in `config.yaml`.
-
-## Contributing
-
-Contributions are welcome! If you'd like to contribute, please follow these steps:
-1.  Fork the repository.
-2.  Create a new branch for your feature or bugfix.
-3.  Implement your changes and write tests if applicable.
-4.  Ensure your code adheres to the project's style guidelines.
-5.  Submit a pull request.
 
 ## License
 
