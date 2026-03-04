@@ -41,6 +41,49 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     return n_full
 
 
+def remove_non_ac_buses_and_links(n: pypsa.Network) -> pypsa.Network:
+    """
+    Identifies buses with carrier 'battery' or 'H2', removes them, and then removes
+    all other components (generators, loads, storage units, stores, and links)
+    attached to those buses.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to clean.
+
+    Returns:
+        pypsa.Network: The network with non-AC infrastructure and attached components removed.
+    """
+    # Identify buses to remove
+    buses_to_remove = n.buses.index[n.buses.carrier.isin(['battery', 'H2'])]
+
+    if not buses_to_remove.empty:
+        num_buses = len(buses_to_remove)
+
+        # Remove attached components for each type
+        for component in ["Generator", "Load", "StorageUnit", "Store", "Link"]:
+            df = n.df(component)
+            if df.empty:
+                continue
+            
+            if component == "Link":
+                # Links have bus0 and bus1
+                mask = df.bus0.isin(buses_to_remove) | df.bus1.isin(buses_to_remove)
+            else:
+                # Generators, Loads, StorageUnits, and Stores have a 'bus' column
+                mask = df.bus.isin(buses_to_remove)
+            
+            items_to_remove = df.index[mask]
+            if not items_to_remove.empty:
+                n.remove(component, items_to_remove)
+                logging.info(f"Pre-processing: Removed {len(items_to_remove)} {component}s attached to non-AC buses.")
+
+        # Finally remove the buses
+        n.remove("Bus", buses_to_remove)
+        logging.info(f"Pre-processing: Removed {num_buses} buses ('battery'/'H2').")
+    
+    return n
+
+
 def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     """
     Preprocesses the PyPSA network based on the provided configuration.
@@ -51,6 +94,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     Returns:
         pypsa.Network: The preprocessed PyPSA network.
     """
+
+    # Remove non-AC infrastructure (battery and H2 buses/links)
+    n = remove_non_ac_buses_and_links(n)
 
     # Add a slack generator to each bus to ensure feasibility
     n.add("Generator", n.buses.index + " slack",
