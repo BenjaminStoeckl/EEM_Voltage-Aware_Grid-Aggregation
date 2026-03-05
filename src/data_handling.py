@@ -362,7 +362,6 @@ def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold:
 
     # 2. Handle Transformers
     if not n.transformers_t.p0.empty:
-        threshold = 0.2
         s_max_pu_trafo = n.transformers.get('s_max_pu', 1.0)
         s_nom_trafo = n.transformers.s_nom
 
