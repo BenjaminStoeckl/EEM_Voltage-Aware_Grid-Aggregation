@@ -41,7 +41,7 @@ def _derive_transformer_mapping(n_orig: pypsa.Network, n_agg: pypsa.Network, bus
     return orig_keys.map(key_to_agg_idx)
 
 
-def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: dict, transformer_strategies: dict = None) -> pypsa.Network:
+def aggregate(n: pypsa.Network, config: dict, label: str) -> pypsa.Network:
     """
     A placeholder for the voltage-aware aggregation method.
 
@@ -50,17 +50,16 @@ def aggregate(n: pypsa.Network, va_aggregation_config: dict, line_strategies: di
 
     Args:
         n (pypsa.Network): The network to be aggregated.
-        va_aggregation_config: configuration for voltage-aware aggregation, e.g., {'num_of_clusters': 100, 'strategy': 'va_electrical_kmedoids'}.
-        line_strategies: strategies for aggregating line attributes.
-        transformer_strategies: strategies for aggregating transformer attributes.
-
-
-    Raises:
-        NotImplementedError: This function is not yet implemented.
+        config (dict): The complete configuration dictionary.
+        label (str): The label identifying which aggregation settings to use from the config (e.g., 'geo_va_aggregation').
 
     Returns:
         pypsa.Network: The aggregated network.
-         """
+    """
+
+    va_aggregation_config = config[label]
+    line_strategies = config.get('line_strategies', {})
+    transformer_strategies = config.get('transformer_strategies', {})
 
     my_strategies = {
         **DEFAULT_ONE_PORT_STRATEGIES,

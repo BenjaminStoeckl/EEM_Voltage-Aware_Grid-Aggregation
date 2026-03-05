@@ -148,9 +148,7 @@ def main():
         match config['aggregate_geo_va']:
             case 'true':
                 logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config['geo_va_aggregation'],
-                                                         line_strategies=config['line_strategies'],
-                                                         transformer_strategies=config.get('transformer_strategies'))
+                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config, 'geo_va_aggregation')
 
                 # n_agg_geo_va = data_handling.add_alternative_shortest_path_routes(n_agg_geo_va, config)
                 n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
@@ -175,9 +173,7 @@ def main():
                 logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
                 n_agg_geo_non_va = pypsa_model.copy()
 
-                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config['geo_non_va_aggregation'],
-                                                             line_strategies=config['line_strategies'],
-                                                             transformer_strategies=config.get('transformer_strategies'))
+                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config, 'geo_non_va_aggregation')
 
                 n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
 
@@ -199,9 +195,7 @@ def main():
         match config['aggregate_elec_va']:
             case 'true':
                 logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
-                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config['elec_va_aggregation'],
-                                                          line_strategies=config['line_strategies'],
-                                                          transformer_strategies=config.get('transformer_strategies'))
+                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config, 'elec_va_aggregation')
 
                 # n_agg_elec_va = data_handling.add_alternative_shortest_path_routes(n_agg_elec_va, config)
                 n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
@@ -226,9 +220,7 @@ def main():
                 logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
                 n_agg_elec_non_va = pypsa_model.copy()
 
-                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config['elec_non_va_aggregation'],
-                                                              line_strategies=config['line_strategies'],
-                                                              transformer_strategies=config.get('transformer_strategies'))
+                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config, 'elec_non_va_aggregation')
 
                 n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
 
