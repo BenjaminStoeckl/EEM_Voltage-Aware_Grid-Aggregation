@@ -85,7 +85,8 @@ def main():
     if config['preprocess_test_case'] or config['aggregate_stub_lines'] or config['temporal_aggregation']:
         # Save the base model state
         pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
-        plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_extendable)
+        plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_voltage)
+        plotting.plot_npap_clustering(pypsa_model, config, 'full_model_base')
 
     # -------------------------------------------------------------------------
     # 5. Full Model Baseline Execution
@@ -97,7 +98,7 @@ def main():
         model_analyzer.analyze_network_results([pypsa_model])
 
         # Identify congested lines and set them as extendable for the following aggregation steps
-        pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model)
+        pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model, threshold=0.7)
 
         if config['add_alternative_shortest_path_routes']:
             pypsa_model = data_handling.add_alternative_shortest_path_routes(pypsa_model, config)
