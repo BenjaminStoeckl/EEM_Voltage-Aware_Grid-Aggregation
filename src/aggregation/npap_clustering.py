@@ -2,6 +2,7 @@
 Placeholder module for the custom voltage-aware grid aggregation method.
 """
 import logging
+import os
 import numpy as np
 import pandas as pd
 import pypsa
@@ -102,7 +103,18 @@ def aggregate(n: pypsa.Network, config: dict, label: str) -> pypsa.Network:
             network.transformers.loc[extendable_any_trafo.index, 's_nom_extendable'] = extendable_any_trafo
             logging.info(f"Mapped 's_nom_extendable' for {len(extendable_any_trafo)} aggregated transformers based on original transformer data.")
 
-    network.name = 'model_agg_npap'
+    network.name = label
     network.sanitize()
+
+    # Export busmap as .csv file to the results folder
+    results_dir = os.path.join(config['results_path'], network.name)
+    os.makedirs(results_dir, exist_ok=True)
+    busmap_path = os.path.join(results_dir, "busmap.csv")
+    try:
+        # Save as CSV with header for easy reloading as Series
+        result.busmap.to_csv(busmap_path, header=['cluster_bus'])
+        logging.info(f"Exported busmap for {label} to {busmap_path}")
+    except Exception as e:
+        logging.error(f"Failed to export busmap for {label}: {e}")
 
     return network
