@@ -14,6 +14,42 @@ import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
 import pandas as pd
 import pypsa
+from pypsa.clustering.npap import plot_npap
+
+
+def plot_npap_clustering(n: pypsa.Network, config: dict, label: str, busmap: pd.Series = None):
+    """
+    Plots the network using NPAP's interactive map plotting.
+    Attempts to load the busmap from the results folder if not provided.
+    """
+    try:
+        if busmap is None:
+            results_dir = os.path.join(config['results_path'], label)
+            busmap_path = os.path.join(results_dir, "busmap.csv")
+            if os.path.exists(busmap_path):
+                # Load busmap as Series. index_col=0 is the original bus name, column 0 is the cluster
+                busmap = pd.read_csv(busmap_path, index_col=0).iloc[:, 0]
+                logging.info(f"Loaded busmap from {busmap_path} for NPAP plotting.")
+            else:
+                logging.warning(f"No busmap found at {busmap_path}. Plotting without clusters.")
+
+        # style="clustered" if busmap is present, else "voltage_aware"
+        style = "clustered" if busmap is not None else "voltage_aware"
+
+        # Ensure the results directory exists
+        results_dir = os.path.join(config['results_path'], label)
+        os.makedirs(results_dir, exist_ok=True)
+
+        fig = plot_npap(n, busmap=busmap, style=style, show=False, title=f"NPAP Clustering: {label}",
+                        include_links=True, include_transformers=True)
+
+        # Save as HTML
+        plot_path = os.path.join(results_dir, "npap_plot.html")
+        fig.write_html(plot_path)
+        logging.info(f"NPAP plot saved to {plot_path}")
+
+    except Exception as e:
+        logging.error(f"Error generating NPAP plot for {label}: {e}")
 
 
 def get_line_colors_by_voltage(n: pypsa.Network) -> pd.Series:
@@ -279,7 +315,7 @@ def plot_network(n: pypsa.Network, output_file: str):
         logging.error(f"{e}")
 
 
-def plot_network_interactive(n: pypsa.Network, output_file: str, 
+def plot_network_interactive(n: pypsa.Network, output_file: str,
                              line_color_func: Callable = get_line_colors_by_voltage,
                              line_width_func: Callable = None,
                              transformer_color_func: Callable = None,
@@ -313,7 +349,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str,
 
         line_color = line_color_func(n)
         line_width = line_width_func(n) if line_width_func else 2
-        
+
         transformer_color = transformer_color_func(n) if transformer_color_func else 'orange'
         transformer_width = transformer_width_func(n) if transformer_width_func else 3
 
@@ -345,8 +381,8 @@ def plot_network_with_results_interactive(n: pypsa.Network, output_file: str):
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
 
-        line_flow = n.lines_t.p0.sum(axis=0)/len(n.lines_t.p0)
-        link_flow = n.links_t.p0.sum(axis=0)/len(n.links_t.p0)
+        line_flow = n.lines_t.p0.sum(axis=0) / len(n.lines_t.p0)
+        link_flow = n.links_t.p0.sum(axis=0) / len(n.links_t.p0)
 
         map = n.explore(
             # bus_size=eb,

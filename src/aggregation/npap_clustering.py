@@ -117,4 +117,4 @@ def aggregate(n: pypsa.Network, config: dict, label: str) -> pypsa.Network:
     except Exception as e:
         logging.error(f"Failed to export busmap for {label}: {e}")
 
-    return network
+    return network, result.busmap

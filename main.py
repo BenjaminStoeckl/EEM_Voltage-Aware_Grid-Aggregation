@@ -148,10 +148,10 @@ def main():
         match config['aggregate_geo_va']:
             case 'true':
                 logging.info("Aggregating the grid using geographical, voltage-aware clustering.")
-                n_agg_geo_va = npap_clustering.aggregate(pypsa_model.copy(), config, 'geo_va_aggregation')
+                n_agg_geo_va, busmap = npap_clustering.aggregate(pypsa_model.copy(), config, 'geo_va_aggregation')
 
                 # n_agg_geo_va = data_handling.add_alternative_shortest_path_routes(n_agg_geo_va, config)
-                n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'model_geo_va_agg', config)
+                n_agg_geo_va = model_runner.run_model_optimization(n_agg_geo_va, 'geo_va_aggregation', config)
 
                 n_agg_geo_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_geo_va, config['results_path'], 
@@ -159,8 +159,10 @@ def main():
                                                   line_width_func=plotting.get_line_widths_by_expansion,
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
+                plotting.plot_npap_clustering(pypsa_model, config, 'geo_va_aggregation', busmap=busmap)
             case 'presolved':
-                n_agg_geo_va = data_handling.load_network(config, 'model_geo_va_agg_solved.nc')
+                n_agg_geo_va = data_handling.load_network(config, 'geo_va_aggregation_solved.nc')
+                plotting.plot_npap_clustering(pypsa_model, config, 'geo_va_aggregation')
 
     # -------------------------------------------------------------------------
     # 7. Grid Aggregation: NPAP - non VA Aggregation
@@ -173,7 +175,7 @@ def main():
                 logging.info("Aggregating the grid using geographical, non-voltage-aware clustering.")
                 n_agg_geo_non_va = pypsa_model.copy()
 
-                n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config, 'geo_non_va_aggregation')
+                n_agg_geo_non_va, busmap = npap_clustering.aggregate(n_agg_geo_non_va, config, 'geo_non_va_aggregation')
 
                 n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'geo_non_va_aggregation', config)
 
@@ -183,8 +185,10 @@ def main():
                                                   line_width_func=plotting.get_line_widths_by_expansion,
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
+                plotting.plot_npap_clustering(pypsa_model, config, 'geo_non_va_aggregation', busmap=busmap)
             case 'presolved':
-                n_agg_geo_non_va = data_handling.load_network(config, 'geo_non_va_aggregation.nc')
+                n_agg_geo_non_va = data_handling.load_network(config, 'geo_non_va_aggregation_solved.nc')
+                plotting.plot_npap_clustering(pypsa_model, config, 'geo_non_va_aggregation')
 
     # -------------------------------------------------------------------------
     # 9. Grid Aggregation: NPAP - VA Aggregation
@@ -195,7 +199,7 @@ def main():
         match config['aggregate_elec_va']:
             case 'true':
                 logging.info("Aggregating the grid using electrical distance, voltage-aware clustering.")
-                n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config, 'elec_va_aggregation')
+                n_agg_elec_va, busmap = npap_clustering.aggregate(pypsa_model.copy(), config, 'elec_va_aggregation')
 
                 # n_agg_elec_va = data_handling.add_alternative_shortest_path_routes(n_agg_elec_va, config)
                 n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'elec_va_aggregation', config)
@@ -206,8 +210,10 @@ def main():
                                                   line_width_func=plotting.get_line_widths_by_expansion,
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
+                plotting.plot_npap_clustering(pypsa_model, config, 'elec_va_aggregation', busmap=busmap)
             case 'presolved':
-                n_agg_elec_va = data_handling.load_network(config, 'elec_va_aggregation.nc')
+                n_agg_elec_va = data_handling.load_network(config, 'elec_va_aggregation_solved.nc')
+                plotting.plot_npap_clustering(pypsa_model, config, 'elec_va_aggregation')
 
     # -------------------------------------------------------------------------
     # 10. Grid Aggregation: NPAP - non VA Aggregation
@@ -220,7 +226,7 @@ def main():
                 logging.info("Aggregating the grid using electrical, non-voltage-aware clustering.")
                 n_agg_elec_non_va = pypsa_model.copy()
 
-                n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config, 'elec_non_va_aggregation')
+                n_agg_elec_non_va, busmap = npap_clustering.aggregate(n_agg_elec_non_va, config, 'elec_non_va_aggregation')
 
                 n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'elec_non_va_aggregation', config)
 
@@ -230,8 +236,10 @@ def main():
                                                   line_width_func=plotting.get_line_widths_by_expansion,
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
+                plotting.plot_npap_clustering(pypsa_model, config, 'elec_non_va_aggregation', busmap=busmap)
             case 'presolved':
-                n_agg_elec_non_va = data_handling.load_network(config, 'elec_non_va_aggregation.nc')
+                n_agg_elec_non_va = data_handling.load_network(config, 'elec_non_va_aggregation_solved.nc')
+                plotting.plot_npap_clustering(pypsa_model, config, 'elec_non_va_aggregation')
 
     # -------------------------------------------------------------------------
     # 11. Results Analysis & Comparison
