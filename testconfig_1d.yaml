@@ -32,7 +32,7 @@ optimization_options:
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
-  line_expansion_cost_380: 10.72 # in Eur/MVA/km/a
+  line_expansion_cost_380: 8.08 # in Eur/MVA/km/a  10.72
   trafo_expansion_cost_380-220: 136.78 # in Eur/MVA/a
 
 geo_va_aggregation:
