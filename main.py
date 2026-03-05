@@ -175,7 +175,7 @@ def main():
 
                 n_agg_geo_non_va = npap_clustering.aggregate(n_agg_geo_non_va, config, 'geo_non_va_aggregation')
 
-                n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'model_geo_non_va_agg', config)
+                n_agg_geo_non_va = model_runner.run_model_optimization(n_agg_geo_non_va, 'geo_non_va_aggregation', config)
 
                 n_agg_geo_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_geo_non_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_geo_non_va, config['results_path'], 
@@ -184,7 +184,7 @@ def main():
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
-                n_agg_geo_non_va = data_handling.load_network(config, 'model_geo_non_va_agg_solved.nc')
+                n_agg_geo_non_va = data_handling.load_network(config, 'geo_non_va_aggregation.nc')
 
     # -------------------------------------------------------------------------
     # 9. Grid Aggregation: NPAP - VA Aggregation
@@ -198,7 +198,7 @@ def main():
                 n_agg_elec_va = npap_clustering.aggregate(pypsa_model.copy(), config, 'elec_va_aggregation')
 
                 # n_agg_elec_va = data_handling.add_alternative_shortest_path_routes(n_agg_elec_va, config)
-                n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'model_elec_va_agg', config)
+                n_agg_elec_va = model_runner.run_model_optimization(n_agg_elec_va, 'elec_va_aggregation', config)
 
                 n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], 
@@ -207,7 +207,7 @@ def main():
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
-                n_agg_elec_va = data_handling.load_network(config, 'model_elec_va_agg_solved.nc')
+                n_agg_elec_va = data_handling.load_network(config, 'elec_va_aggregation.nc')
 
     # -------------------------------------------------------------------------
     # 10. Grid Aggregation: NPAP - non VA Aggregation
@@ -222,7 +222,7 @@ def main():
 
                 n_agg_elec_non_va = npap_clustering.aggregate(n_agg_elec_non_va, config, 'elec_non_va_aggregation')
 
-                n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'model_elec_non_va_agg', config)
+                n_agg_elec_non_va = model_runner.run_model_optimization(n_agg_elec_non_va, 'elec_non_va_aggregation', config)
 
                 n_agg_elec_non_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_non_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_elec_non_va, config['results_path'], 
@@ -231,7 +231,7 @@ def main():
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
             case 'presolved':
-                n_agg_elec_non_va = data_handling.load_network(config, 'model_elec_non_va_agg_solved.nc')
+                n_agg_elec_non_va = data_handling.load_network(config, 'elec_non_va_aggregation.nc')
 
     # -------------------------------------------------------------------------
     # 11. Results Analysis & Comparison
