@@ -112,7 +112,7 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
     # Add estimated transformer data
-    # n = _add_estimated_transformer_data(n)
+    n = _add_estimated_transformer_data(n, 'transformers_estimated_pypsa_eur_2026')
 
     # Define line capacities for lines with s_nom = 0
     n = _define_line_capacities(n)
@@ -217,7 +217,7 @@ def _add_network_expansion_costs(n: pypsa.Network, expansion_cost: dict) -> pyps
     return n
 
 
-def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
+def _add_estimated_transformer_data(n: pypsa.Network, file_name: str = 'transformers_estimated') -> pypsa.Network:
     """
     Adds estimated transformer data from a CSV file to the network.
     The data is matched based on 'bus0' and 'bus1' columns.
@@ -231,7 +231,7 @@ def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
         pypsa.Network: The updated PyPSA network.
     """
 
-    file_path = os.path.join("data", "transformers_estimated.csv")
+    file_path = os.path.join("data", file_name + ".csv")
     if not os.path.exists(file_path):
         logging.warning(f"{file_path} not found. Skipping estimated transformer data.")
         return n
