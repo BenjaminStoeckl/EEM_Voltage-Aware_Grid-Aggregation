@@ -8,7 +8,7 @@ path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 test_case: "base_s_all_elec_.nc"
 
 preprocess_test_case: true
-aggregate_stub_lines: true
+aggregate_stub_lines: false
 temporal_aggregation: true
 run_full_model_base: true
 
@@ -60,6 +60,7 @@ line_strategies:
   capital_cost: "average"
   s_max_pu: "average"
   num_parallel: "sum"
+  s_nom_max: "sum"
   v_nom: "average"
   carrier: "first"
 
@@ -69,6 +70,7 @@ transformer_strategies:
   s_nom: "sum"
   capital_cost: "average"
   s_max_pu: "average"
+  s_nom_max: "sum"
   carrier: "first"
   num_parallel: 'sum'
   tap_ratio: 'first'

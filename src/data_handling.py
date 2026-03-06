@@ -117,6 +117,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     # Define line capacities for lines with s_nom = 0
     n = _define_line_capacities(n)
 
+    n.lines['s_nom_max'] = 99999  # n.lines['s_nom'] * 1.5  # Set maximum capacity to 150% of current capacity to allow for expansion
+    n.transformers['s_nom_max'] = 99999  # n.transformers['s_nom'] * 1.5  # Set maximum capacity to 150% of current capacity to allow for expansion
+
     # Set standard voltage levels (220/380 kV)
     # n = _set_standard_voltages(n)
 
