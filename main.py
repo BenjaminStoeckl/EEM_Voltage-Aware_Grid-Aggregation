@@ -98,7 +98,7 @@ def main():
         model_analyzer.analyze_network_results([pypsa_model])
 
         # Identify congested lines and set them as extendable for the following aggregation steps
-        pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model, threshold=0.8)
+        pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model, method='all_70_or_one_90')
 
         if config['add_alternative_shortest_path_routes']:
             pypsa_model = data_handling.add_alternative_shortest_path_routes(pypsa_model, config)
