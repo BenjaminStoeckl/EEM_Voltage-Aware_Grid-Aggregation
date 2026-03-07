@@ -210,7 +210,7 @@ def main():
 
                 n_agg_elec_va.export_to_netcdf(os.path.join(config['results_path'], 'networks', n_agg_elec_va.name + '.nc'))
                 plotting.plot_network_interactive(n_agg_elec_va, config['results_path'], 
-                                                  line_color_func=plotting.get_line_colors_by_expansion,
+                                                  line_color_func=plotting.get_line_colors_by_voltage,
                                                   line_width_func=plotting.get_line_widths_by_expansion,
                                                   transformer_color_func=plotting.get_transformer_colors_by_expansion,
                                                   transformer_width_func=plotting.get_transformer_widths_by_expansion)
@@ -253,21 +253,32 @@ def main():
     if (config['run_full_model_grid_expansion'] != 'false'
         and config['aggregate_geo_va'] != 'false'
         and config['aggregate_geo_non_va'] != 'false'
-        and config['aggregate_elec_va'] != 'false'
-        and config['aggregate_elec_non_va'] != 'false'):
+        and config['aggregate_elec_va'] != 'false'):
+        # Create list of solved networks for analysis
+        solved_networks_list = [n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va]
+
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_geo_non_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_va)
         model_analyzer.analyze_active_slack_nodes(n_agg_elec_non_va)
-        model_analyzer.analyze_network_results([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
-        
+        model_analyzer.analyze_network_results(solved_networks_list)
+
         # Summarize investment comparison
         summary_path = os.path.join(config['results_path'], 'investment_comparison_summary.csv')
-        model_analyzer.summarize_investment_comparison([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va], 
-                                                        output_path=summary_path)
+        investment_summary_df = model_analyzer.summarize_investment_comparison(
+            solved_networks_list,
+            output_path=summary_path
+        )
+
+        # Generate LaTeX table from summary
+        model_analyzer.generate_investment_latex_table(
+            networks=solved_networks_list,
+            investment_df=investment_summary_df,
+            config=config
+        )
 
         # create network collection for statistics
-        solved_networks = pypsa.NetworkCollection([n_full_grid_expansion, n_agg_geo_va, n_agg_geo_non_va, n_agg_elec_va, n_agg_elec_non_va])
+        solved_networks = pypsa.NetworkCollection(solved_networks_list)
         expanded_capacity = solved_networks.statistics.expanded_capacity()
         logging.info(expanded_capacity[['Line', 'Transformer']])
 

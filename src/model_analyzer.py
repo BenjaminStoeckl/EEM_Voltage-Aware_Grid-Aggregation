@@ -2,6 +2,7 @@ import logging
 import pypsa
 import pandas as pd
 import os
+import json
 from typing import List, Optional
 
 
@@ -340,3 +341,104 @@ def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
     logging.info(f"Total System-wide Slack Production: {bus_slack_summary.sum():.2f} MWh")
 
     return bus_slack_summary
+
+
+def generate_investment_latex_table(
+    networks: List[pypsa.Network],
+    investment_df: pd.DataFrame,
+    config: dict,
+    template_path: str = 'latex_templates/investment_cost_results_latex_table.txt',
+):
+    """
+    Fills a LaTeX template with investment summary data from a DataFrame.
+
+    This function takes a DataFrame, typically from `summarize_investment_comparison`,
+    and uses it to fill placeholders in a specified LaTeX template. It persists the
+    placeholder values in a JSON file within the output directory, allowing for
+    cumulative updates over multiple runs.
+
+    Args:
+        networks (List[pypsa.Network]): List of networks to get node counts from.
+        investment_df (pd.DataFrame): DataFrame containing investment summary data.
+        config (dict): The configuration dictionary.
+        template_path (str): Path to the LaTeX template file.
+    """
+    output_dir: str = config['results_path']
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Manage placeholder dictionary for persistence
+    placeholder_path = os.path.join(output_dir, 'latex_placeholders.json')
+    if os.path.exists(placeholder_path):
+        with open(placeholder_path, 'r') as f:
+            placeholders = json.load(f)
+    else:
+        placeholders = {}
+
+    # Create a map from model name to its bus count
+    bus_counts = {n.name: len(n.buses) for n in networks}
+
+    # Update placeholders from the input DataFrame
+    for model_name, row in investment_df.iterrows():
+        key_prefix = None
+        # Improved name parsing
+        if model_name.startswith('full_model_grid_exp'):
+            key_prefix = 'FG'
+        elif 'geo_va_aggregation' in model_name:
+            num_clusters = config.get('geo_va_aggregation', {}).get('num_of_clusters')
+            if num_clusters:
+                key_prefix = f'VA_{num_clusters}'
+        elif 'geo_non_va_aggregation' in model_name:
+            num_clusters = config.get('geo_non_va_aggregation', {}).get('num_of_clusters')
+            if num_clusters:
+                key_prefix = f'VU_{num_clusters}'
+
+        if not key_prefix:
+            logging.debug(f"Model name '{model_name}' not configured for LaTeX table. Skipping.")
+            continue
+
+        # Add k value to placeholders (only if a placeholder like @@K_FG@@ exists in template)
+        bus_count = bus_counts.get(model_name)
+        if bus_count is not None:
+            placeholders[f'@@K_{key_prefix}@@'] = str(bus_count)
+
+        # Update placeholders for lines and transformers
+        for component in ['Line', 'Trafo']:
+            cap_gva = row.get(f'{component} Expanded Capacity [GVA]', 'N/A')
+            cost_meur = row.get(f'{component} Investment Cost [M€]', 'N/A')
+            cost_dev = row.get(f'{component} Cost Deviation [%]')
+
+            comp_key = 'LINES' if component == 'Line' else 'TRAFO'
+
+            if cap_gva != 'N/A':
+                placeholders[f'@@{comp_key}_{key_prefix}_CAP@@'] = f"{cap_gva:.1f}"
+            if cost_meur != 'N/A':
+                placeholders[f'@@{comp_key}_{key_prefix}_COST@@'] = f"{cost_meur:.1f}"
+
+            if cost_dev is not None and not pd.isna(cost_dev):
+                relative_perc = 100 + cost_dev
+                placeholders[f'@@{comp_key}_{key_prefix}_PERC@@'] = f"{relative_perc:.1f}\\%"
+            # elif key_prefix == 'FG':
+            #     placeholders[f'@@{comp_key}_{key_prefix}_PERC@@'] = "100.0\\%"
+
+    # Save updated placeholder dictionary
+    with open(placeholder_path, 'w') as f:
+        json.dump(placeholders, f, indent=4, sort_keys=True)
+    logging.info(f"Updated LaTeX placeholders saved to {placeholder_path}")
+
+    # Load template and fill placeholders
+    try:
+        with open(template_path, 'r') as f:
+            template_content = f.read()
+    except FileNotFoundError:
+        logging.error(f"LaTeX template not found at: {template_path}")
+        return
+
+    filled_template = template_content
+    for key, value in placeholders.items():
+        filled_template = filled_template.replace(str(key), str(value))
+
+    # Save filled LaTeX table
+    output_latex_path = os.path.join(output_dir, 'investment_cost_summary.tex')
+    with open(output_latex_path, 'w') as f:
+        f.write(filled_template)
+    logging.info(f"Filled LaTeX table saved to {output_latex_path}")
