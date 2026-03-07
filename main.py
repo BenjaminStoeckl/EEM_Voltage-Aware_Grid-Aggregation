@@ -110,6 +110,9 @@ def main():
 
         pypsa_model.export_to_netcdf(os.path.join(config['results_path'], 'networks', pypsa_model.name + '.nc'))
         plotting.plot_network_interactive(pypsa_model, config['results_path'], line_color_func=plotting.get_line_colors_by_expansion)
+    else:
+        # update expandable lines in case definition has changed
+        pypsa_model = data_handling.set_congested_lines_and_transformers_extendable(pypsa_model, method='all_70_or_one_90')
 
     # -------------------------------------------------------------------------
     # 5. Full Model Grid Expansion Execution
