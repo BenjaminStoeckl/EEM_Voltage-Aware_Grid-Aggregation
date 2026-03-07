@@ -271,6 +271,10 @@ def main():
         expanded_capex = solved_networks.statistics.expanded_capex()
         logging.info(expanded_capex[['Line', 'Transformer']])
 
+        # compare line expansion of different voltage levels
+        voltage_level_comparison = model_analyzer.analyze_voltage_level_investments([n_full_grid_expansion, n_agg_geo_va, n_agg_elec_va],
+                                                                                    config['pypsa_eur_test_case_path'])
+
     logging.info("Workflow completed.")
 
 

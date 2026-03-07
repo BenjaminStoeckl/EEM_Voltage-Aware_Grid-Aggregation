@@ -225,6 +225,72 @@ def summarize_investment_comparison(networks: List[pypsa.Network], output_path: 
     return df
 
 
+def analyze_voltage_level_investments(networks: List[pypsa.Network], output_path: Optional[str] = None) -> pd.DataFrame:
+    """
+    Analyzes line investments (added capacity and cost) categorized by voltage levels:
+    below 300 kV and 300 kV or above.
+
+    Args:
+        networks (List[pypsa.Network]): List of optimized PyPSA networks.
+        output_path (Optional[str]): Path to save the summary CSV.
+
+    Returns:
+        pd.DataFrame: Summary table of investment metrics split by voltage.
+    """
+    summary_data = []
+
+    for i, n in enumerate(networks):
+        name = getattr(n, 'name', f"Model_{i}")
+
+        added_cap_low = 0
+        cost_low = 0
+        added_cap_high = 0
+        cost_high = 0
+
+        if not n.lines.empty and 's_nom_opt' in n.lines.columns:
+            # Get line voltages based on bus0
+            line_v_nom = n.lines.bus0.map(n.buses.v_nom)
+
+            # Line investments
+            diff = (n.lines.s_nom_opt - n.lines.s_nom).clip(lower=0)
+            costs = diff * n.lines.capital_cost
+
+            mask_low = line_v_nom < 300
+            mask_high = line_v_nom >= 300
+
+            added_cap_low = diff[mask_low].sum()
+            cost_low = costs[mask_low].sum()
+
+            added_cap_high = diff[mask_high].sum()
+            cost_high = costs[mask_high].sum()
+
+        summary_data.append({
+            'Model': name,
+            'Low-V Added Capacity (<300kV) [MVA]': added_cap_low,
+            'Low-V Investment Cost [€]': cost_low,
+            'High-V Added Capacity (>=300kV) [MVA]': added_cap_high,
+            'High-V Investment Cost [€]': cost_high,
+            'Total Added Line Capacity [MVA]': added_cap_low + added_cap_high,
+            'Total Line Investment Cost [€]': cost_low + cost_high
+        })
+
+    df = pd.DataFrame(summary_data).set_index('Model')
+    df = df.round(2)
+
+    logging.info("\nVoltage-Level Investment Analysis (Lines):")
+    logging.info(df.to_string())
+
+    if output_path:
+        directory = os.path.dirname(output_path)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+        file_path = os.path.join(directory, 'comparison_investment_by_voltage.csv')
+        df.to_csv(file_path)
+        logging.info(f"Voltage-level investment analysis saved to: {file_path}")
+
+    return df
+
+
 def analyze_active_slack_nodes(n: pypsa.Network) -> pd.Series:
     """
     Identifies buses where slack generators are producing non-zero power
