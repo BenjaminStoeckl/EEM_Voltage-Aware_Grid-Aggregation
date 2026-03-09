@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pypsa
 from pypsa.clustering.npap import plot_npap
+from npap.visualization import PlotConfig
 
 
 def plot_npap_clustering(n: pypsa.Network, config: dict, label: str, busmap: pd.Series = None):
@@ -24,7 +25,7 @@ def plot_npap_clustering(n: pypsa.Network, config: dict, label: str, busmap: pd.
     """
     try:
         if busmap is None:
-            results_dir = os.path.join(config['results_path'], label)
+            results_dir = os.path.join(config['pypsa_eur_test_case_path'], label)
             busmap_path = os.path.join(results_dir, "busmap.csv")
             if os.path.exists(busmap_path):
                 # Load busmap as Series. index_col=0 is the original bus name, column 0 is the cluster
@@ -36,12 +37,25 @@ def plot_npap_clustering(n: pypsa.Network, config: dict, label: str, busmap: pd.
         # style="clustered" if busmap is present, else "voltage_aware"
         style = "clustered" if busmap is not None else "voltage_aware"
 
+        # Define additional options for plotting
+        plot_settings = PlotConfig(
+            edge_width=3,
+            node_size=10,
+        )
+
         # Ensure the results directory exists
         results_dir = os.path.join(config['results_path'], label)
         os.makedirs(results_dir, exist_ok=True)
 
-        fig = plot_npap(n, busmap=busmap, style=style, show=False, title=f"NPAP Clustering: {label}",
-                        include_links=True, include_transformers=True)
+        fig = plot_npap(n,
+                        busmap=busmap,
+                        style=style,
+                        show=False,
+                        title=f"NPAP Clustering: {label}",
+                        include_links=True,
+                        include_transformers=True,
+                        config=plot_settings,
+                        )
 
         # Save as HTML
         plot_path = os.path.join(results_dir, "npap_plot.html")
@@ -181,7 +195,7 @@ def get_line_colors_by_congestion(n: pypsa.Network) -> pd.Series:
         return pd.Series(dtype=str)
 
 
-def get_line_colors_by_expansion(n: pypsa.Network) -> pd.Series:
+def get_line_colors_by_expansion(n: pypsa.Network, expansion_threshold: float = 100) -> pd.Series:
     """
     Calculates line colors based on whether the line capacity was expanded (s_nom_opt > s_nom).
 
@@ -191,13 +205,14 @@ def get_line_colors_by_expansion(n: pypsa.Network) -> pd.Series:
     Returns:
         pd.Series: A pandas Series with line names as index and corresponding colors as values.
                    Expanded lines are red, others are black.
+                   :param expansion_threshold:
     """
     try:
         line_colors = pd.Series('black', index=n.lines.index, dtype=str)
 
         if 's_nom_opt' in n.lines.columns:
             # Check for expansion with a small tolerance for float precision
-            expanded_mask = (n.lines['s_nom_opt'] > n.lines['s_nom'] + 1e-3)
+            expanded_mask = (n.lines['s_nom_opt'] > n.lines['s_nom'] + expansion_threshold)
             line_colors.loc[expanded_mask] = 'red'
 
         return line_colors
@@ -319,7 +334,8 @@ def plot_network_interactive(n: pypsa.Network, output_file: str,
                              line_color_func: Callable = get_line_colors_by_voltage,
                              line_width_func: Callable = None,
                              transformer_color_func: Callable = None,
-                             transformer_width_func: Callable = None):
+                             transformer_width_func: Callable = None,
+                             jitter: float = 0.05):
     """
     Generates an interactive geographical plot of the PyPSA network using `n.explore()`
     and saves it to an HTML file.
@@ -340,6 +356,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str,
                                                      pandas Series of transformer colors.
         transformer_width_func (Callable, optional): A function that takes a PyPSA network and returns a
                                                      pandas Series of transformer widths.
+        jitter
     """
     try:
         logging.info(f"Generating interactive plot and saving to {output_file}...")
@@ -358,7 +375,7 @@ def plot_network_interactive(n: pypsa.Network, output_file: str,
                         transformer_color=transformer_color,
                         transformer_width=transformer_width,
                         tooltip=True,
-                        jitter=0.05, )
+                        jitter=jitter, )
         map.to_html(os.path.join(output_file, n.name, 'interactive_map.html'))
     except Exception as e:
         logging.error(f"{e}")
