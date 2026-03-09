@@ -8,7 +8,7 @@ and visualizations incorporating simulation results.
 
 import logging
 import os
-from typing import Callable
+from typing import Callable, Optional
 
 import cartopy.crs as ccrs
 import matplotlib.pyplot as plt
@@ -221,6 +221,445 @@ def get_transformer_widths_by_expansion(n: pypsa.Network, scale: float = 0.01, m
     except Exception as e:
         logging.error(f"Error calculating transformer widths by expansion: {e}")
         return pd.Series(min_width, index=n.transformers.index)
+
+
+def get_line_widths_by_expansion(n: pypsa.Network, scale: float = 0.01, min_width: float = 1.5) -> pd.Series:
+    """
+    Calculates line widths based on the amount of capacity expansion (s_nom_opt - s_nom).
+
+    Args:
+        n (pypsa.Network): The solved PyPSA network.
+        scale (float): Scaling factor for the expansion amount.
+        min_width (float): Minimum width for all lines.
+
+    Returns:
+        pd.Series: A pandas Series with line names as index and corresponding widths as values.
+    """
+    try:
+        widths = pd.Series(min_width, index=n.lines.index)
+
+        if 's_nom_opt' in n.lines.columns:
+            expansion = (n.lines['s_nom_opt'] - n.lines['s_nom']).clip(lower=0)
+            widths += expansion * scale
+
+        return widths
+
+    except Exception as e:
+        logging.error(f"Error calculating line widths by expansion: {e}")
+        return pd.Series(min_width, index=n.lines.index)
+
+
+# ---------------------------------------------------------------------------
+# NPAP-style constants (from npap.visualization.PlotConfig defaults)
+# ---------------------------------------------------------------------------
+NPAP_LINE_HIGH_VOLTAGE_COLOR = "#029E73"   # green – high voltage lines (>300 kV)
+NPAP_LINE_LOW_VOLTAGE_COLOR = "#CA9161"    # brown/orange – low voltage lines (<=300 kV)
+NPAP_TRAFO_COLOR = "#ECE133"              # yellow – transformers
+NPAP_DC_LINK_COLOR = "#CC78BC"            # pink/purple – DC links
+NPAP_NODE_COLOR = "#0173B2"               # blue – buses
+NPAP_LINE_INVESTMENT_COLOR = "#D55E00"    # orange-red – line investment
+NPAP_TRAFO_INVESTMENT_COLOR = "#882255"  # dark magenta – trafo investment
+NPAP_VOLTAGE_THRESHOLD = 300.0
+
+NPAP_MAP_STYLE = "carto-positron"
+NPAP_BG_COLOR = "#008080"                 # teal background
+
+# For voltage-unaware: a single dark color for all existing lines
+NPAP_UNIFORM_LINE_COLOR = "#636363"
+
+# Predefined region view settings: {center_lat, center_lon, zoom}
+REGION_VIEWS = {
+    'europe': dict(center_lat=52.0, center_lon=14.0, zoom=3.7),
+    'adria':  dict(center_lat=42.5, center_lon=15.5, zoom=5.5),
+    'sicily': dict(center_lat=37.5, center_lon=14, zoom=8.7),
+}
+
+
+def _get_expansion_mask_lines(n: pypsa.Network):
+    """Boolean mask for lines that were expanded."""
+    if 's_nom_opt' in n.lines.columns:
+        return n.lines['s_nom_opt'] > n.lines['s_nom'] + 1e-3
+    return pd.Series(False, index=n.lines.index)
+
+
+def _get_expansion_mask_trafos(n: pypsa.Network):
+    """Boolean mask for transformers that were expanded."""
+    if 's_nom_opt' in n.transformers.columns:
+        return n.transformers['s_nom_opt'] > n.transformers['s_nom'] + 1e-3
+    return pd.Series(False, index=n.transformers.index)
+
+
+def _expansion_amount(s_nom, s_nom_opt):
+    """Return the expansion in MVA (clipped to >= 0)."""
+    return max(0.0, s_nom_opt - s_nom)
+
+
+def _investment_line_width(expansion_mva, max_expansion, min_width=3.5, max_width=12.0):
+    """Map expansion MVA to a line width linearly between min_width and max_width."""
+    if max_expansion <= 0:
+        return min_width
+    t = min(expansion_mva / max_expansion, 1.0)
+    return min_width + t * (max_width - min_width)
+
+
+
+def _build_branch_traces(n: pypsa.Network, voltage_aware: bool,
+                         min_line_investment: float = 0.0,
+                         min_trafo_investment: float = 0.0):
+    """
+    Build Plotly Scattermapbox traces for lines, transformers, and links
+    using the NPAP visualization style with investment highlighting.
+
+    Investment lines are rendered with per-segment widths proportional to
+    the expansion amount. Expanded trafos are rendered as artificially
+    extended line segments (~0.15 degrees, north–south) centered on their
+    midpoint, with width proportional to expansion.
+
+    Args:
+        n: PyPSA network.
+        voltage_aware: Whether to color by voltage level.
+        min_line_investment: Minimum expansion (MVA) for a line to be shown as investment.
+        min_trafo_investment: Minimum expansion (MVA) for a trafo to be shown as investment.
+    """
+    import numpy as np
+    import plotly.graph_objects as go
+
+    expanded_lines = _get_expansion_mask_lines(n)
+    expanded_trafos = _get_expansion_mask_trafos(n)
+
+    # Helper to get bus coordinates
+    def _bus_coords(bus_name):
+        bus = n.buses.loc[bus_name]
+        return bus.y, bus.x  # lat, lon
+
+    # ---- Collect non-investment line segments by group ----
+    groups = {}
+
+    def _add_segment(key, lat0, lon0, lat1, lon1):
+        if key not in groups:
+            groups[key] = dict(lats=[], lons=[], count=0)
+        g = groups[key]
+        g['lats'].extend([lat0, lat1, None])
+        g['lons'].extend([lon0, lon1, None])
+        g['count'] += 1
+
+    # ---- Collect investment data separately (need per-element widths) ----
+    # inv_lines stores (lat0, lon0, lat1, lon1, expansion_mva, color_key)
+    # color_key is 'line_high', 'line_low', or 'line_existing' so investment
+    # lines keep their original voltage color but are rendered thicker.
+    inv_lines = []
+    inv_trafos = []  # list of (lat_mid, lon_mid, expansion_mva)
+
+    # --- Lines ---
+    for idx, line in n.lines.iterrows():
+        try:
+            lat0, lon0 = _bus_coords(line.bus0)
+            lat1, lon1 = _bus_coords(line.bus1)
+        except (KeyError, AttributeError):
+            continue
+
+        is_expanded = expanded_lines.get(idx, False)
+        s_nom = line.get('s_nom', 0)
+        s_nom_opt = line.get('s_nom_opt', s_nom)
+        expansion = _expansion_amount(s_nom, s_nom_opt)
+
+        # Determine voltage color key for this line
+        if voltage_aware:
+            v_nom = n.buses.loc[line.bus0, 'v_nom'] if line.bus0 in n.buses.index else 0
+            color_key = 'line_high' if v_nom > NPAP_VOLTAGE_THRESHOLD else 'line_low'
+        else:
+            color_key = 'line_existing'
+
+        if is_expanded and expansion >= min_line_investment:
+            inv_lines.append((lat0, lon0, lat1, lon1, expansion, color_key))
+        else:
+            _add_segment(color_key, lat0, lon0, lat1, lon1)
+
+    # --- Transformers ---
+    if not n.transformers.empty:
+        for idx, trafo in n.transformers.iterrows():
+            try:
+                lat0, lon0 = _bus_coords(trafo.bus0)
+                lat1, lon1 = _bus_coords(trafo.bus1)
+            except (KeyError, AttributeError):
+                continue
+
+            is_expanded = expanded_trafos.get(idx, False)
+            s_nom = trafo.get('s_nom', 0)
+            s_nom_opt = trafo.get('s_nom_opt', s_nom)
+            expansion = _expansion_amount(s_nom, s_nom_opt)
+
+            if is_expanded and expansion >= min_trafo_investment:
+                inv_trafos.append((lat0, lon0, lat1, lon1, expansion))
+            elif voltage_aware:
+                _add_segment('trafo', lat0, lon0, lat1, lon1)
+            else:
+                _add_segment('line_existing', lat0, lon0, lat1, lon1)
+
+    # --- Links (DC) ---
+    if not n.links.empty:
+        for idx, link in n.links.iterrows():
+            try:
+                lat0, lon0 = _bus_coords(link.bus0)
+                lat1, lon1 = _bus_coords(link.bus1)
+            except (KeyError, AttributeError):
+                continue
+            _add_segment('dc_link', lat0, lon0, lat1, lon1)
+
+    # ---- Build traces ----
+    traces = []
+
+    # 1) Non-investment network traces (single width per group)
+    if voltage_aware:
+        base_order = [
+            ('line_high', NPAP_LINE_HIGH_VOLTAGE_COLOR, 'HV Lines (>300 kV)'),
+            ('line_low',  NPAP_LINE_LOW_VOLTAGE_COLOR,  'LV Lines (\u2264300 kV)'),
+            ('trafo',     NPAP_TRAFO_COLOR,             'Transformers'),
+            ('dc_link',   NPAP_DC_LINK_COLOR,           'DC Links'),
+        ]
+    else:
+        base_order = [
+            ('line_existing', NPAP_UNIFORM_LINE_COLOR,  'Existing Network'),
+            ('dc_link',       NPAP_DC_LINK_COLOR,       'DC Links'),
+        ]
+
+    for key, color, legend_name in base_order:
+        if key not in groups:
+            continue
+        g = groups[key]
+        traces.append(go.Scattermapbox(
+            lon=g['lons'],
+            lat=g['lats'],
+            mode='lines',
+            line=dict(width=2.5, color=color),
+            name=f"{legend_name} ({g['count']})",
+            hoverinfo='name',
+            legendgroup=key,
+        ))
+
+    # 2) Investment lines – thicker lines keeping their original voltage color
+    #    Bucket by (color_key, width_bucket) so each trace has uniform color+width.
+    if inv_lines:
+        max_exp = max(e for _, _, _, _, e, _ in inv_lines)
+
+        # Map color keys to actual colors
+        COLOR_KEY_MAP = {
+            'line_high': NPAP_LINE_HIGH_VOLTAGE_COLOR,
+            'line_low': NPAP_LINE_LOW_VOLTAGE_COLOR,
+            'line_existing': NPAP_UNIFORM_LINE_COLOR,
+        }
+
+        WIDTH_BUCKETS = 8
+        # keyed by (color_key, bucket_idx)
+        bucket_data = {}
+
+        for lat0, lon0, lat1, lon1, expansion, color_key in inv_lines:
+            w = _investment_line_width(expansion, max_exp)
+            bucket_idx = min(int((w - 3.5) / (12.0 - 3.5) * WIDTH_BUCKETS), WIDTH_BUCKETS - 1)
+            bucket_idx = max(0, bucket_idx)
+            bkey = (color_key, bucket_idx)
+            if bkey not in bucket_data:
+                bucket_data[bkey] = dict(lats=[], lons=[], count=0, width=0.0, color_key=color_key)
+            b = bucket_data[bkey]
+            b['lats'].extend([lat0, lat1, None])
+            b['lons'].extend([lon0, lon1, None])
+            b['count'] += 1
+            b['width'] = max(b['width'], w)
+
+        first_bucket = True
+        for b in bucket_data.values():
+            if b['count'] == 0:
+                continue
+            traces.append(go.Scattermapbox(
+                lon=b['lons'],
+                lat=b['lats'],
+                mode='lines',
+                line=dict(width=b['width'], color=COLOR_KEY_MAP.get(b['color_key'], NPAP_UNIFORM_LINE_COLOR)),
+                name=f"Line Investment ({len(inv_lines)})" if first_bucket else '',
+                hoverinfo='name',
+                legendgroup='investment_line',
+                showlegend=first_bucket,
+            ))
+            first_bucket = False
+
+    # 3) Investment trafos – real bus0/bus1 coordinates, width ~ expansion
+    if inv_trafos:
+        max_exp_t = max(e for _, _, _, _, e in inv_trafos)
+
+        TRAFO_WIDTH_BUCKETS = 8
+        tbucket_data = [dict(lats=[], lons=[], count=0, width=0.0) for _ in range(TRAFO_WIDTH_BUCKETS)]
+
+        for lat0, lon0, lat1, lon1, expansion in inv_trafos:
+            w = _investment_line_width(expansion, max_exp_t)
+            bucket_idx = min(int((w - 2.0) / (10.0 - 2.0) * TRAFO_WIDTH_BUCKETS), TRAFO_WIDTH_BUCKETS - 1)
+            bucket_idx = max(0, bucket_idx)
+            tb = tbucket_data[bucket_idx]
+            tb['lats'].extend([lat0, lat1, None])
+            tb['lons'].extend([lon0, lon1, None])
+            tb['count'] += 1
+            tb['width'] = max(tb['width'], w)
+
+        first_tbucket = True
+        for tb in tbucket_data:
+            if tb['count'] == 0:
+                continue
+            traces.append(go.Scattermapbox(
+                lon=tb['lons'],
+                lat=tb['lats'],
+                mode='lines',
+                line=dict(width=tb['width'], color=NPAP_TRAFO_INVESTMENT_COLOR),
+                name=f"Trafo Investment ({len(inv_trafos)})" if first_tbucket else '',
+                hoverinfo='name',
+                legendgroup='investment_trafo',
+                showlegend=first_tbucket,
+            ))
+            first_tbucket = False
+
+    # 4) Bus nodes – small dots at each bus location
+    bus_lats = n.buses['y'].tolist()
+    bus_lons = n.buses['x'].tolist()
+    bus_texts = [str(idx) for idx in n.buses.index]
+    traces.append(go.Scattermapbox(
+        lon=bus_lons,
+        lat=bus_lats,
+        mode='markers',
+        marker=dict(size=12, color=NPAP_NODE_COLOR, opacity=0.8),
+        text=bus_texts,
+        hoverinfo='text',
+        name=f"Buses ({len(n.buses)})",
+        legendgroup='buses',
+    ))
+
+    return traces
+
+
+def plot_network_paper(n: pypsa.Network, output_file: str,
+                       voltage_aware: bool = True,
+                       regions: Optional[list] = None,
+                       fmt: str = 'pdf',
+                       show: bool = False,
+                       show_title: bool = True,
+                       show_legend: bool = True,
+                       min_line_investment: float = 0.0,
+                       min_trafo_investment: float = 0.0):
+    """
+    Generate paper-quality plots in NPAP style using Plotly + carto-positron.
+
+    For voltage-aware networks:
+      - Lines colored by voltage level (NPAP palette: green HV, brown LV)
+      - Transformers in yellow, DC links in pink
+      - Line investment in orange-red (width ~ expansion MVA)
+      - Trafo investment as dark magenta line segments (width ~ expansion MVA)
+
+    For voltage-unaware networks:
+      - All existing lines in uniform dark gray
+      - Same investment rendering as above
+
+    Saves static images (pdf/png/svg) and the interactive HTML.
+
+    Args:
+        n: Solved PyPSA network.
+        output_file: Base results directory.
+        voltage_aware: If True, color lines by voltage level; if False, uniform color.
+        regions: List of region keys to plot (default: ['europe', 'adria']).
+        fmt: Output format ('pdf', 'png', 'svg').
+        dpi: Resolution for raster formats.
+        show: If True, also open the interactive plot in the browser.
+        show_title: If True, display the network name as title.
+        show_legend: If True, display the color legend.
+        min_line_investment: Minimum expansion (MVA) for a line to appear as investment.
+            Lines below this threshold are shown as regular network lines.
+        min_trafo_investment: Minimum expansion (MVA) for a trafo to appear as investment.
+            Trafos below this threshold are shown as regular transformers.
+    """
+    import plotly.graph_objects as go
+    import plotly.io as pio
+
+    if regions is None:
+        regions = ['europe', 'adria']
+
+    out_dir = os.path.join(output_file, n.name)
+    os.makedirs(out_dir, exist_ok=True)
+
+    # Build traces (shared across regions, we just change the map view)
+    traces = _build_branch_traces(n, voltage_aware,
+                                  min_line_investment=min_line_investment,
+                                  min_trafo_investment=min_trafo_investment)
+
+    suffix = 'va' if voltage_aware else 'non_va'
+
+    for region in regions:
+        view = REGION_VIEWS.get(region, REGION_VIEWS['europe'])
+
+        # -- Shared layout options --
+        base_layout = dict(
+            paper_bgcolor=NPAP_BG_COLOR,
+            hovermode='closest',
+            showlegend=show_legend,
+            mapbox=dict(
+                style=NPAP_MAP_STYLE,
+                bearing=0,
+                center=dict(lat=view['center_lat'], lon=view['center_lon']),
+                pitch=0,
+                zoom=view['zoom'],
+            ),
+            margin=dict(r=0, t=0 if not show_title else 30, l=0, b=0),
+        )
+
+        if show_title:
+            base_layout.update(
+                title_text=n.name,
+                title_font=dict(color='white', size=20, family='Arial, sans-serif'),
+                title_y=0.994,
+                title_x=0.5,
+                title_xanchor='center',
+            )
+
+        if show_legend:
+            base_layout['legend'] = dict(
+                yanchor='top', y=0.99,
+                xanchor='left', x=0.01,
+                bgcolor='rgba(255,255,255,0.95)',
+                bordercolor=NPAP_BG_COLOR,
+                borderwidth=1,
+                font=dict(size=11),
+                itemsizing='constant',
+                tracegroupgap=5,
+            )
+
+        # -- Interactive HTML: fullscreen (fills browser window) --
+        fig_html = go.Figure(data=traces)
+        fig_html.update_layout(**base_layout, autosize=True)
+
+        html_path = os.path.join(out_dir, f'map_{suffix}_{region}.html')
+        fig_html.write_html(
+            html_path,
+            config={'scrollZoom': True},
+            full_html=True,
+            default_width='100vw',
+            default_height='100vh',
+        )
+        logging.info(f"Saved interactive plot: {html_path}")
+
+        # -- Static image: large fixed size for paper-quality export --
+        static_w = 3200 if region == 'europe' else 2400
+        static_h = 2400
+        fig_static = go.Figure(data=traces)
+        fig_static.update_layout(**base_layout, width=static_w, height=static_h)
+
+        img_path = os.path.join(out_dir, f'map_{suffix}_{region}.{fmt}')
+        try:
+            fig_static.write_image(img_path, scale=6 if fmt == 'png' else 2)
+            logging.info(f"Saved static image: {img_path}")
+        except Exception as e:
+            logging.warning(
+                f"Could not save static image ({e}). "
+                f"Install kaleido: pip install -U kaleido"
+            )
+
+        if show:
+            pio.renderers.default = 'browser'
+            fig.show(config={'scrollZoom': True})
 
 
 def plot_network(n: pypsa.Network, output_file: str):
