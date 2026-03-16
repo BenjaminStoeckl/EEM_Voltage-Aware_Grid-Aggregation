@@ -1,22 +1,22 @@
 # Always use double backslashes in Windows paths to avoid issues with escape characters.
 
-pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur-all_v2026.02.0"
 #pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\WS-results"
 results_path: "C:\\BeSt\\VA-GA\\results"
 path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
-test_case: "elec.nc"
+test_case: "base_s_all_elec_.nc"
 
 preprocess_test_case: true
 aggregate_stub_lines: false
 temporal_aggregation: true
 run_full_model_base: true
 
-run_full_model_grid_expansion: 'false' # Options: true, false, 'presolved'
-aggregate_geo_va: 'false' # Options: true, false, 'presolved'
-aggregate_geo_non_va: 'false' # Options: true, false, 'presolved'
-aggregate_elec_va: 'false' # Options: true, false, 'presolved
-aggregate_elec_non_va: 'false' # Options: true, false, 'presolved'
+run_full_model_grid_expansion: 'true' # Options: true, false, 'presolved'
+aggregate_geo_va: 'true' # Options: true, false, 'presolved'
+aggregate_geo_non_va: 'true' # Options: true, false, 'presolved'
+aggregate_elec_va: 'true' # Options: true, false, 'presolved
+aggregate_elec_non_va: 'true' # Options: true, false, 'presolved'
 
 solver_options: {
   LogToConsole: 0,
@@ -29,7 +29,7 @@ add_alternative_shortest_path_routes: false
 
 optimization_options:
   include_line_expansion: true
-  define_expandable_lines: 'all_congested_lines' # Options: 'all_congested_lines', 'all'
+  define_expandable_lines: 'predefined' # Options: 'all_congested_lines', 'all'
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
@@ -60,6 +60,7 @@ line_strategies:
   capital_cost: "average"
   s_max_pu: "average"
   num_parallel: "sum"
+  s_nom_max: "sum"
   v_nom: "average"
   carrier: "first"
 
@@ -69,6 +70,7 @@ transformer_strategies:
   s_nom: "sum"
   capital_cost: "average"
   s_max_pu: "average"
+  s_nom_max: "sum"
   carrier: "first"
   num_parallel: 'sum'
   tap_ratio: 'first'
