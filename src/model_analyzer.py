@@ -103,7 +103,12 @@ def analyze_network_results(networks: List[pypsa.Network], output_path: Optional
                 line_added_capacity = added_capacity.sum()
                 line_investment_cost = (added_capacity * extendable_lines.capital_cost).sum()
 
+                added_lines_length = extendable_lines.length
+                added_capacity_length = (added_capacity * added_lines_length).sum()
+
+
         analysis_row['Added Line Capacity [MVA]'] = line_added_capacity
+        analysis_row['Added Line Capacity x Length [MVA*km]'] = added_capacity_length
         analysis_row['Line Investment Cost [€]'] = line_investment_cost
 
         # 5. Transformer Investments (Capacity added and Cost)
