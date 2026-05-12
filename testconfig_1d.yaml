@@ -1,21 +1,21 @@
 # Always use double backslashes in Windows paths to avoid issues with escape characters.
 
-pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur-all_v2026.02.0"
 results_path: "C:\\BeSt\\VA-GA\\results"
 path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
-test_case: "elec.nc"
+test_case: "base_s_all_elec_.nc"
 
 preprocess_test_case: true
 aggregate_stub_lines: true
 temporal_aggregation: true
 run_full_model_base: true
 
-run_full_model_grid_expansion: 'presolved' # Options: true, false, 'presolved'
-aggregate_geo_va: 'presolved' # Options: true, false, 'presolved'
-aggregate_geo_non_va: 'presolved' # Options: true, false, 'presolved'
-aggregate_elec_va: 'presolved' # Options: true, false, 'presolved
-aggregate_elec_non_va: 'presolved' # Options: true, false, 'presolved'
+run_full_model_grid_expansion: 'true' # Options: true, false, 'presolved'
+aggregate_geo_va: 'true' # Options: true, false, 'presolved'
+aggregate_geo_non_va: 'true' # Options: true, false, 'presolved'
+aggregate_elec_va: 'true' # Options: true, false, 'presolved
+aggregate_elec_non_va: 'true' # Options: true, false, 'presolved'
 
 solver_options: {
   LogToConsole: 0,
@@ -32,7 +32,7 @@ optimization_options:
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
-  line_expansion_cost_380: 10.72 # in Eur/MVA/km/a
+  line_expansion_cost_380: 8.08 # in Eur/MVA/km/a  10.72
   trafo_expansion_cost_380-220: 136.78 # in Eur/MVA/a
 
 geo_va_aggregation:

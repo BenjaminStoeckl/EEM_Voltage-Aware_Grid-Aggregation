@@ -1,0 +1,36 @@
+\begin{table}[htbp]
+    \centering
+    \caption{Compact comparison of expanded capacity and investment costs grouped by component.}
+    \label{tab:investment_summary_split_headers}
+    \begin{tabular}{ll rrr}
+        \toprule
+        \textbf{Component} & \textbf{Model} & $k$ & \textbf{Capacity} & \textbf{Cost} \\
+        & & & in \si{\giga\volt\ampere} & in \si{\mega\euro} (\%) \\
+        \midrule
+        
+        \textbf{Lines} 
+        & Full Grid  & 6795 & @@LINES_FG_CAP@@ & @@LINES_FG_COST@@ (@@LINES_FG_PERC@@) \\
+        & VA Agg.    & 250  & @@LINES_VA_250_CAP@@ & @@LINES_VA_250_COST@@ (@@LINES_VA_250_PERC@@) \\
+        &            & 500  & @@LINES_VA_500_CAP@@ & @@LINES_VA_500_COST@@ (@@LINES_VA_500_PERC@@) \\
+        &            & 1000 & @@LINES_VA_1000_CAP@@ & @@LINES_VA_1000_COST@@ (@@LINES_VA_1000_PERC@@) \\
+        &            & 3000 & @@LINES_VA_3000_CAP@@ & @@LINES_VA_3000_COST@@ (@@LINES_VA_3000_PERC@@) \\
+        & VU Agg.    & 250  & @@LINES_VU_250_CAP@@ & @@LINES_VU_250_COST@@ (@@LINES_VU_250_PERC@@) \\
+        &            & 500  & @@LINES_VU_500_CAP@@ & @@LINES_VU_500_COST@@ (@@LINES_VU_500_PERC@@) \\
+        &            & 1000 & @@LINES_VU_1000_CAP@@ & @@LINES_VU_1000_COST@@ (@@LINES_VU_1000_PERC@@) \\
+        &            & 3000 & @@LINES_VU_3000_CAP@@ & @@LINES_VU_3000_COST@@ (@@LINES_VU_3000_PERC@@) \\
+        \addlinespace
+
+        \textbf{Transformers}
+        & Full Grid & 6795 & @@TRAFO_FG_CAP@@ & @@TRAFO_FG_COST@@ (@@TRAFO_FG_PERC@@) \\
+        & VA Agg.   & 250  & @@TRAFO_VA_250_CAP@@ & @@TRAFO_VA_250_COST@@ (@@TRAFO_VA_250_PERC@@) \\
+        &           & 500  & @@TRAFO_VA_500_CAP@@ & @@TRAFO_VA_500_COST@@ (@@TRAFO_VA_500_PERC@@) \\
+        &           & 1000 & @@TRAFO_VA_1000_CAP@@ & @@TRAFO_VA_1000_COST@@ (@@TRAFO_VA_1000_PERC@@) \\
+        &           & 3000 & @@TRAFO_VA_3000_CAP@@ & @@TRAFO_VA_3000_COST@@ (@@TRAFO_VA_3000_PERC@@) \\
+        & VU Agg.   & 250  & @@TRAFO_VU_250_CAP@@ & @@TRAFO_VU_250_COST@@ (@@TRAFO_VU_250_PERC@@) \\
+        &           & 500  & @@TRAFO_VU_500_CAP@@ & @@TRAFO_VU_500_COST@@ (@@TRAFO_VU_500_PERC@@) \\
+        &           & 1000 & @@TRAFO_VU_1000_CAP@@ & @@TRAFO_VU_1000_COST@@ (@@TRAFO_VU_1000_PERC@@) \\
+        &           & 3000 & @@TRAFO_VU_3000_CAP@@ & @@TRAFO_VU_3000_COST@@ (@@TRAFO_VU_3000_PERC@@) \\
+        
+        \bottomrule
+    \end{tabular}
+\end{table}

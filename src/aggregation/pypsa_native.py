@@ -71,7 +71,7 @@ def aggregate_stubs(n: pypsa.Network) -> pypsa.Network:
         'geometry': 'first',
     }
 
-    reduce_stub_busmap = pypsa.clustering.spatial.busmap_by_stubs(n, ['carrier', 'v_nom', 'under_construction'])
+    reduce_stub_busmap = pypsa.clustering.spatial.busmap_by_stubs(n, ['carrier', 'v_nom'])
 
     clustering = pypsa.clustering.spatial.get_clustering_from_busmap(n,
                                                                      reduce_stub_busmap,

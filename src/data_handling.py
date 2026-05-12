@@ -41,6 +41,49 @@ def load_network(config: dict, case: str = None) -> pypsa.Network:
     return n_full
 
 
+def remove_non_ac_buses_and_links(n: pypsa.Network) -> pypsa.Network:
+    """
+    Identifies buses with carrier 'battery' or 'H2', removes them, and then removes
+    all other components (generators, loads, storage units, stores, and links)
+    attached to those buses.
+
+    Args:
+        n (pypsa.Network): The PyPSA network to clean.
+
+    Returns:
+        pypsa.Network: The network with non-AC infrastructure and attached components removed.
+    """
+    # Identify buses to remove
+    buses_to_remove = n.buses.index[n.buses.carrier.isin(['battery', 'H2'])]
+
+    if not buses_to_remove.empty:
+        num_buses = len(buses_to_remove)
+
+        # Remove attached components for each type
+        for component in ["Generator", "Load", "StorageUnit", "Store", "Link"]:
+            df = n.df(component)
+            if df.empty:
+                continue
+            
+            if component == "Link":
+                # Links have bus0 and bus1
+                mask = df.bus0.isin(buses_to_remove) | df.bus1.isin(buses_to_remove)
+            else:
+                # Generators, Loads, StorageUnits, and Stores have a 'bus' column
+                mask = df.bus.isin(buses_to_remove)
+            
+            items_to_remove = df.index[mask]
+            if not items_to_remove.empty:
+                n.remove(component, items_to_remove)
+                logging.info(f"Pre-processing: Removed {len(items_to_remove)} {component}s attached to non-AC buses.")
+
+        # Finally remove the buses
+        n.remove("Bus", buses_to_remove)
+        logging.info(f"Pre-processing: Removed {num_buses} buses ('battery'/'H2').")
+    
+    return n
+
+
 def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     """
     Preprocesses the PyPSA network based on the provided configuration.
@@ -51,6 +94,9 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     Returns:
         pypsa.Network: The preprocessed PyPSA network.
     """
+
+    # Remove non-AC infrastructure (battery and H2 buses/links)
+    n = remove_non_ac_buses_and_links(n)
 
     # Add a slack generator to each bus to ensure feasibility
     n.add("Generator", n.buses.index + " slack",
@@ -66,10 +112,13 @@ def preprocess_network(n: pypsa.Network, config: dict) -> pypsa.Network:
     n.lines.loc[(n.lines.active & n.lines.num_parallel == 0), 'num_parallel'] = 1
 
     # Add estimated transformer data
-    n = _add_estimated_transformer_data(n)
+    n = _add_estimated_transformer_data(n, 'transformers_estimated_pypsa_eur_2026')
 
     # Define line capacities for lines with s_nom = 0
     n = _define_line_capacities(n)
+
+    n.lines['s_nom_max'] = 99999  # n.lines['s_nom'] * 1.5  # Set maximum capacity to 150% of current capacity to allow for expansion
+    n.transformers['s_nom_max'] = 99999  # n.transformers['s_nom'] * 1.5  # Set maximum capacity to 150% of current capacity to allow for expansion
 
     # Set standard voltage levels (220/380 kV)
     # n = _set_standard_voltages(n)
@@ -171,7 +220,7 @@ def _add_network_expansion_costs(n: pypsa.Network, expansion_cost: dict) -> pyps
     return n
 
 
-def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
+def _add_estimated_transformer_data(n: pypsa.Network, file_name: str = 'transformers_estimated') -> pypsa.Network:
     """
     Adds estimated transformer data from a CSV file to the network.
     The data is matched based on 'bus0' and 'bus1' columns.
@@ -185,7 +234,7 @@ def _add_estimated_transformer_data(n: pypsa.Network) -> pypsa.Network:
         pypsa.Network: The updated PyPSA network.
     """
 
-    file_path = os.path.join("data", "transformers_estimated.csv")
+    file_path = os.path.join("data", file_name + ".csv")
     if not os.path.exists(file_path):
         logging.warning(f"{file_path} not found. Skipping estimated transformer data.")
         return n
@@ -272,19 +321,21 @@ def _define_line_capacities(n: pypsa.Network) -> pypsa.Network:
     return n
 
 
-def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold: float = 0.8) -> pypsa.Network:
+def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold: float = 0.8, method: str = 'max_loading') -> pypsa.Network:
     """
     Identifies congested lines and transformers in the network based on power flow
     results and sets the 's_nom_extendable' attribute to True for those components.
 
     A component is considered congested if its maximum absolute power flow across all
     snapshots is greater than or equal to the specified threshold of its nominal
-    capacity (s_nom).
+    capacity (s_nom). Alternatively, a new method 'all_70_or_one_90' can be used.
 
     Args:
         n (pypsa.Network): The PyPSA network with results.
         threshold (float): The loading threshold to consider a component congested.
-                          Defaults to 0.95.
+                          Defaults to 0.8.
+        method (str): The method to identify congested components. Options are 'max_loading'
+                      and 'all_70_or_one_90'.
 
     Returns:
         pypsa.Network: The network with updated 's_nom_extendable' for lines and transformers.
@@ -298,15 +349,19 @@ def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold:
         # Ensure we only check lines that have flow data
         lines_with_results = n.lines.index.intersection(n.lines_t.p0.columns)
         if not lines_with_results.empty:
-            max_flow = n.lines_t.p0[lines_with_results].abs().max()
             capacity = (s_nom * s_max_pu).loc[lines_with_results]
 
-            # Avoid division by zero
-            loading = max_flow / capacity.replace(0, np.inf)
-
-            congested_lines = loading[loading >= threshold].index
-
-            logging.info(f"Identified {len(congested_lines)} congested lines (loading >= {threshold}).")
+            if method == 'all_70_or_one_90':
+                loading = n.lines_t.p0[lines_with_results].abs() / capacity.replace(0, np.inf)
+                congested_mask = (loading.min() >= 0.7) | (loading.max() >= 0.9)
+                congested_lines = congested_mask[congested_mask].index
+                logging.info(f"Identified {len(congested_lines)} congested lines (loading >= 70% all or >= 90% once).")
+            else:
+                max_flow = n.lines_t.p0[lines_with_results].abs().max()
+                # Avoid division by zero
+                loading = max_flow / capacity.replace(0, np.inf)
+                congested_lines = loading[loading >= threshold].index
+                logging.info(f"Identified {len(congested_lines)} congested lines (loading >= {threshold}).")
 
             n.lines['s_nom_extendable'] = False
             if not congested_lines.empty:
@@ -321,14 +376,18 @@ def set_congested_lines_and_transformers_extendable(n: pypsa.Network, threshold:
 
         trafos_with_results = n.transformers.index.intersection(n.transformers_t.p0.columns)
         if not trafos_with_results.empty:
-            max_flow_trafo = n.transformers_t.p0[trafos_with_results].abs().max()
             capacity_trafo = (s_nom_trafo * s_max_pu_trafo).loc[trafos_with_results]
 
-            loading_trafo = max_flow_trafo / capacity_trafo.replace(0, np.inf)
-
-            congested_trafos = loading_trafo[loading_trafo >= threshold].index
-
-            logging.info(f"Identified {len(congested_trafos)} congested transformers (loading >= {threshold}).")
+            if method == 'all_70_or_one_90':
+                loading_trafo = n.transformers_t.p0[trafos_with_results].abs() / capacity_trafo.replace(0, np.inf)
+                congested_mask_trafo = (loading_trafo.min() >= 0.7) | (loading_trafo.max() >= 0.9)
+                congested_trafos = congested_mask_trafo[congested_mask_trafo].index
+                logging.info(f"Identified {len(congested_trafos)} congested transformers (loading >= 70% all or >= 90% once).")
+            else:
+                max_flow_trafo = n.transformers_t.p0[trafos_with_results].abs().max()
+                loading_trafo = max_flow_trafo / capacity_trafo.replace(0, np.inf)
+                congested_trafos = loading_trafo[loading_trafo >= threshold].index
+                logging.info(f"Identified {len(congested_trafos)} congested transformers (loading >= {threshold}).")
 
             n.transformers['s_nom_extendable'] = False
             if not congested_trafos.empty:

@@ -29,7 +29,7 @@ add_alternative_shortest_path_routes: false
 
 optimization_options:
   include_line_expansion: true
-  define_expandable_lines: 'all_congested_lines' # Options: 'all_congested_lines', 'all'
+  define_expandable_lines: 'predefined' # Options: 'all_congested_lines', 'all'
 
 network_expansion_costs:
   line_expansion_cost_220: 12.37 # in Eur/MVA/km/a
@@ -60,6 +60,7 @@ line_strategies:
   capital_cost: "average"
   s_max_pu: "average"
   num_parallel: "sum"
+  s_nom_max: "sum"
   v_nom: "average"
   carrier: "first"
 
@@ -69,6 +70,7 @@ transformer_strategies:
   s_nom: "sum"
   capital_cost: "average"
   s_max_pu: "average"
+  s_nom_max: "sum"
   carrier: "first"
   num_parallel: 'sum'
   tap_ratio: 'first'

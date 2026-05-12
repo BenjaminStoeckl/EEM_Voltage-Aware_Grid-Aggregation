@@ -96,7 +96,7 @@ def run_model_optimization(n: pypsa.Network, model_name: str, config: Dict, acti
                    problem_fn=path_temp_files,
                    solver_options=config["solver_options"],
                    compute_infeasibilities=True,
-                   include_objective_constant=True)
+                   include_objective_constant=False)
 
         logging.info(f"Optimization for '{model_name}' complete (simulation).")
         n.name = f'{model_name}_solved'
