@@ -1,11 +1,11 @@
 # Always use double backslashes in Windows paths to avoid issues with escape characters.
 
-pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\PyPSA-Eur_v0.7.0"
+pypsa_eur_test_case_path: 'C:\BeSt\VA-GA\PyPSA-Eur-all_v2026.02.0'
 #pypsa_eur_test_case_path: "C:\\BeSt\\VA-GA\\WS-results"
 results_path: "C:\\BeSt\\VA-GA\\results"
 path_for_temporary_files: "C:\\BeSt\\VA-GA\\temp"
 
-test_case: "elec.nc"
+test_case: "base_s_all_elec_.nc"
 
 preprocess_test_case: true
 aggregate_stub_lines: false
